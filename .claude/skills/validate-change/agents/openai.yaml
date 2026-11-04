@@ -1,0 +1,7 @@
+interface:
+  display_name: "Validate Change"
+  short_description: "Validate a change end to end: static checks, review, runtime proof"
+  default_prompt: "Use $validate-change to validate this PR or local diff against the human's intent."
+
+policy:
+  allow_implicit_invocation: false

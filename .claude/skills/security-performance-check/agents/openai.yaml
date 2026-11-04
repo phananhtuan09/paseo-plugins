@@ -1,0 +1,7 @@
+interface:
+  display_name: "Security Performance Check"
+  short_description: "Targeted security and performance check on a change (report-only)"
+  default_prompt: "Use $security-performance-check to run a security and/or performance check on this PR or local diff."
+
+policy:
+  allow_implicit_invocation: false

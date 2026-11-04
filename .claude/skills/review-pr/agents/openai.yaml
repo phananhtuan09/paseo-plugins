@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review PR"
+  short_description: "Review changes against repository authority."
+  default_prompt: "Use $review-pr to review this PR or local diff against relevant repository authority and affected behavior."

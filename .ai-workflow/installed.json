@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 2,
+  "packageVersion": "10.0.0",
+  "core": {
+    "id": "repository-driven-protocol",
+    "runtimes": [
+      "claude"
+    ],
+    "skills": [
+      "manage-project-knowledge",
+      "quality-code-check",
+      "record-workflow-friction",
+      "review-pr",
+      "runtime-e2e-test",
+      "security-performance-check",
+      "senior-code-review",
+      "validate-change"
+    ]
+  },
+  "addons": [],
+  "kits": [
+    "coding-standard"
+  ],
+  "runtimes": [
+    "claude"
+  ],
+  "skills": [
+    "manage-project-knowledge",
+    "quality-code-check",
+    "record-workflow-friction",
+    "review-pr",
+    "runtime-e2e-test",
+    "security-performance-check",
+    "senior-code-review",
+    "validate-change"
+  ],
+  "files": [
+    {
+      "scope": "repository",
+      "path": ".claude/agents/review-pr.md",
+      "hash": "sha256:d57f87a457a1e3be7f0558eca1f203d6a271c03411642f8144c917fd14bdba9d"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/CLAUDE.md",
+      "hash": "sha256:7b50d15feae7b63b94d845b2fa6e19e3220527c5b0cac69303b7fc19bd7484a8"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/output-styles/brainstorm-partner.md",
+      "hash": "sha256:08dabce5c86d292965201531348988c6991cd98fd58ec985d5203a3a4a353d08"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/output-styles/tech-explainer.md",
+      "hash": "sha256:aea35aac8873090d28c6f581529a745c72132adc23337e5b50b63c7128eaf787"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/output-styles/ui-visualizer.md",
+      "hash": "sha256:bc9332394c2cabe1c8f428b0709eded98d8427f496b07739ab94137280550c19"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/scripts/preview-component.sh",
+      "hash": "sha256:508e8c9552c642b9371cd353c8627073008248dedfdb4507c5752e7f4a48eb6e"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/settings.json",
+      "hash": "sha256:b8fd2c9c7663406ff7ba0639d0144448f2ced4fc8a706a99a22153b7fd435523"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/manage-project-knowledge/SKILL.md",
+      "hash": "sha256:f24208f393e43d1bcc296de3f2f4d05e25299e02ece04b41d6d60339c6768c93"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/quality-code-check/references/surface-rules.md",
+      "hash": "sha256:349ce22bba4bf624877bf64f4f7394558eac04e8736abe8f69fcec8bc1179ef3"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/quality-code-check/scripts/surface-scan.cjs",
+      "hash": "sha256:b79c3bdc0d9167ab58b22f56ed48c6745faf3ec4ce5ec78d685efc2204e8170f"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/quality-code-check/SKILL.md",
+      "hash": "sha256:afe7f799a61c7c95f4f760281f81cc9faf9244342a57b56618cf48b154a55379"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/record-workflow-friction/agents/openai.yaml",
+      "hash": "sha256:5a6570686e3d94fb74cbc1763446d341aa23401ee86ec40712978cc9fa4d9ecb"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/record-workflow-friction/SKILL.md",
+      "hash": "sha256:0f5ec7dcec941c711c4eedc976bdfc05c26321275eb111429ef74dce798ec036"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/review-pr/agents/openai.yaml",
+      "hash": "sha256:686bbe8489bd710e9641172f8239712b639b7df29d4e4dc0966f21729d10f895"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/review-pr/SKILL.md",
+      "hash": "sha256:30ffcaf0b16ff1db5ad879d659d71ad0b2237f8e62fd2ec74beb82156489962a"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/runtime-e2e-test/references/blind-spots.md",
+      "hash": "sha256:6147ad90643687e06227e567d82d763cc346234ea64e039d5cf6e1282a6a4018"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/runtime-e2e-test/references/playwright-contract.md",
+      "hash": "sha256:eaa4bc2046f5a68855bd30c7c5c676a841ac510b188738a9410ea859969eff09"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/runtime-e2e-test/references/project-runtime.md",
+      "hash": "sha256:381dc70692cac48b8138f6235d59a1e0ad181bd28da2d57d2cdc7aa3455fbb8b"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/runtime-e2e-test/scripts/evidence.py",
+      "hash": "sha256:0b0000a6c73f5cfaf9015e7359bc82773a739254fe35389fb9374308d0e6791d"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/runtime-e2e-test/scripts/impact.py",
+      "hash": "sha256:648d1847c25f120e63169cbffbf940484aebcf3448918e0749939e47c8cef307"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/runtime-e2e-test/scripts/report.py",
+      "hash": "sha256:4d3011a169c42392c0ea9636154b06c3815076d74b251300188b4c46df47c38c"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/runtime-e2e-test/SKILL.md",
+      "hash": "sha256:62aa3c091cf1f5c9f24f3f1d4bb41ecaef39febfa318f727a6c7255c152f5479"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/runtime-e2e-test/validate_test_plan.py",
+      "hash": "sha256:6bdeb5b0912427d9baec9cea64b72c507fa21b888d7c0bb691df9eb6123fc376"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/security-performance-check/agents/openai.yaml",
+      "hash": "sha256:0c2efed03ddcbb52a2f09c7b3bf22552e3bcd42c912b0ad4430a847aa099bfad"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/security-performance-check/references/evidence-contract.md",
+      "hash": "sha256:e241486f0e93007b55c20bb76a1217620792fd1d43a2ffc92688388cff411776"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/security-performance-check/references/performance-signals.md",
+      "hash": "sha256:9d415d3d1dce4fef1a651e38938007aa54c7b812e7115a71a2781a7b3c4886e9"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/security-performance-check/references/security-signals.md",
+      "hash": "sha256:76c11f4a05dc52bd04395457ed916b1baf88a5f22977e0cba455e0399def3317"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/security-performance-check/scripts/check_findings.py",
+      "hash": "sha256:0bb848a80a3ba753438bd283188aa70ce15080bdd1151df25e9cfb4ea2a6599a"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/security-performance-check/SKILL.md",
+      "hash": "sha256:b0249dc50cbabbf4815d5572706a810f836338471ffa78054ab19e3267f3fdb0"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/senior-code-review/agents/openai.yaml",
+      "hash": "sha256:6618a6f71b0762f26e21ac1ac73152f7f65c503b04e1c0df273625e90b3e86b3"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/senior-code-review/references/review-catalog.md",
+      "hash": "sha256:6c1d590a11d295a5706d004e23678d2151be038d98b53d688e6ef8764b72aa96"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/senior-code-review/SKILL.md",
+      "hash": "sha256:00a4034314cdf5d7ca59dbc38a1f25d7f794cbff55d3002c1378f5203c0a401a"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/validate-change/agents/openai.yaml",
+      "hash": "sha256:ea0a8f6cbea6efaeccd74e414323c96f8c0ebc54b50693d3c6dceb8268784aa8"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/validate-change/references/risk-rules.md",
+      "hash": "sha256:9951edd8ece4c65d0e3a9ad4c50e2778f42bc89f8867fdfb2396907891a3a925"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/validate-change/scripts/validate_change.py",
+      "hash": "sha256:de2c79b881ebc1469a82876ef8d96e7410b1a056903b777bb02b85aa5e4bee93"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/skills/validate-change/SKILL.md",
+      "hash": "sha256:76e6174cdc3d5794fed60a3febfd03c7b1ab34337918a8c283e2c3905ac8df1e"
+    },
+    {
+      "scope": "repository",
+      "path": ".claude/statusline.sh",
+      "hash": "sha256:c8ddddc0c9b12f8a86573c9fb02d83c5117743a7913bb95ce1ceaa971bc0fd20"
+    },
+    {
+      "scope": "repository",
+      "path": "AGENTS.md",
+      "hash": "sha256:dacf7cf85985e84b17dd963817960f014f72cf641a535134d3ff667cb48c9f02"
+    },
+    {
+      "scope": "repository",
+      "path": "docs/decisions/README.md",
+      "hash": "sha256:9e4ad815eb97e0daa7ea5d548fa9bcc2465b73d4355e607fbc04a0f1622e0217"
+    },
+    {
+      "scope": "repository",
+      "path": "docs/observed/README.md",
+      "hash": "sha256:045b83c11303b3374a16691fef9a30d4972a156f6e55807b0062b7244aa702b2"
+    },
+    {
+      "scope": "repository",
+      "path": "docs/patterns/README.md",
+      "hash": "sha256:2309159251cc64992e7b06b4eaf732b25f3c5710a3a9df2ad761bd319a6d2f77"
+    },
+    {
+      "scope": "repository",
+      "path": "docs/plans/active/README.md",
+      "hash": "sha256:a13b93e3ba88081b3cb2348fe9306654e86d0a4ef8266d8c04b72a477b480ecb"
+    },
+    {
+      "scope": "repository",
+      "path": "docs/plans/completed/README.md",
+      "hash": "sha256:e768002051a0d34c4c6d7da4398ebca9d5063e29ff2d30a60936c71823f826ec"
+    },
+    {
+      "scope": "repository",
+      "path": "docs/product/README.md",
+      "hash": "sha256:8d2a5bdc221ebe8c2c31659da1c7bbeb5582ba5f9b0ef1c987e49fb2b685be1d"
+    },
+    {
+      "scope": "repository",
+      "path": "docs/README.md",
+      "hash": "sha256:17f19daaa83c9a276ea9d4d8c182e0eda3dcb89ceae56d28a5aba4a725891c92"
+    },
+    {
+      "scope": "repository",
+      "path": "docs/runbooks/README.md",
+      "hash": "sha256:ed9ec29ad46285e5c1a701f9738ae036157cd6fe6cd6a579d46bb29ff5c80edf"
+    },
+    {
+      "scope": "repository",
+      "path": "docs/testing/active/README.md",
+      "hash": "sha256:d60f7e65c29c0b11e8b7e86a34ff11aa65b535e327989506417e75c729de7e5a"
+    },
+    {
+      "scope": "repository",
+      "path": "docs/testing/completed/README.md",
+      "hash": "sha256:7009b3ee2b9465635ecfc24a13d374d84d1d491c55fd5e315f8a7023072f050b"
+    },
+    {
+      "scope": "repository",
+      "path": "docs/testing/README.md",
+      "hash": "sha256:0f1b31d1d19c5dba2b04e8d17032c1e324ea0719114d9cfed2e247f125eaaf56"
+    },
+    {
+      "scope": "repository",
+      "path": "docs/WORKFLOW.md",
+      "hash": "sha256:601e100a04727ac9c6269b2b8da803005b6c057e0096193f101baf28fe337c1a"
+    }
+  ]
+}

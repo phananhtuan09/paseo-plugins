@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agent-activity · display concepts</title>
+<style>
+:root{
+  --ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+}
+/* Paseo default theme, limited to the 11 PluginTheme.colors tokens a plugin receives.
+   --s3/--xmuted/--run are aliases of those tokens, never extra colors. */
+.t-light,.t-dark{--s3:var(--border);--xmuted:var(--muted);--run:var(--accent)}
+.t-light{--s0:#ffffff;--s1:#fafafa;--s2:#f4f4f5;--fg:#1a1a1e;--muted:#71717a;--border:#e4e4e7;--accent:#20744A;--ok:#3e704a;--bad:#9d433b;--warn:#7b5d39;--sidebar:#f4f4f5;--sel:#20744A33}
+.t-dark{--s0:#181B1A;--s1:#1E2120;--s2:#272A29;--fg:#fafafa;--muted:#A1A5A4;--border:#252B2A;--accent:#20744A;--ok:#6cb17b;--bad:#d8847b;--warn:#c09664;--sidebar:#141716;--sel:#20744A66}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--ui);background:var(--sidebar);color:var(--fg);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+::selection{background:var(--sel)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--fg);outline-offset:2px;border-radius:6px}
+svg.i{width:16px;height:16px;flex:none;stroke-width:1.75;display:block}
+.ico{display:inline-flex;align-items:center}
+.spin{animation:spin 1.1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}.pulse::after{animation:none!important}}
+
+/* ---------- mockup chrome ---------- */
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--s0)}
+.bar h1{font-size:13px;font-weight:600;margin:0 6px 0 0;white-space:nowrap}
+.bar h1 span{color:var(--muted);font-weight:400}
+.grp{display:flex;align-items:center;gap:6px}
+.grp>label{font-size:12px;color:var(--muted)}
+.seg{display:inline-flex;background:var(--s2);border-radius:8px;padding:2px}
+.seg button{border:0;background:transparent;padding:4px 10px;border-radius:6px;font-size:12px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.seg button[aria-pressed=true]{background:var(--s0);color:var(--fg);box-shadow:0 1px 2px #0000001f}
+.btn{border:1px solid var(--border);background:var(--s0);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--s1)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.clock{font:12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;min-width:44px}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 340px;min-height:0}
+.canvas{display:flex;justify-content:center;padding:20px;min-height:0;overflow:hidden}
+.side{border-left:1px solid var(--border);background:var(--s0);display:flex;flex-direction:column;min-height:0}
+.side section{padding:14px 16px;border-bottom:1px solid var(--border)}
+.side h2{font-size:12px;font-weight:600;margin:0 0 8px;color:var(--fg)}
+.side p{margin:0;color:var(--muted);font-size:12.5px}
+.rules{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.rules li{font-size:12.5px;padding:4px 8px;border-radius:6px;color:var(--muted);transition:background .4s,color .4s}
+.rules li b{color:var(--fg);font-weight:600;margin-right:4px;font-variant-numeric:tabular-nums}
+.rules li.hit{background:var(--s2);color:var(--fg)}
+.log{flex:1;overflow:auto;padding:10px 16px 16px;display:flex;flex-direction:column;gap:6px}
+.log div{font-size:12px;color:var(--muted);display:grid;grid-template-columns:40px 1fr;gap:6px}
+.log div span:first-child{font-family:var(--mono);color:var(--xmuted);font-variant-numeric:tabular-nums}
+.log div em{font-style:normal;color:var(--fg)}
+
+/* ---------- Paseo frame ---------- */
+.frame{width:min(920px,100%);height:100%;background:var(--s0);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 24px -12px #0000002e}
+.frame.compact{width:390px}
+.fhead{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)}
+.fhead .title{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fhead .prov{font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap}
+.tl{flex:1;overflow:auto;padding:18px 0 28px}
+.tl-inner{max-width:760px;margin:0 auto;padding:0 20px}
+.compact .tl-inner{padding:0 12px}
+.user{display:flex;justify-content:flex-end;margin:22px 0 14px}
+.user:first-child{margin-top:0}
+.user div{background:var(--s2);border-radius:14px;padding:8px 12px;max-width:80%}
+.turnend{font-size:12px;color:var(--xmuted);margin:10px 0 0}
+.composer{border-top:1px solid var(--border);padding:10px 14px}
+.composer>div:last-child{border:1px solid var(--border);border-radius:12px;padding:10px 12px;color:var(--xmuted);font-size:13.5px}
+
+/* shared card atoms */
+.sum.prose-sum{font-family:var(--ui);font-size:13px}
+.sum{font-family:var(--mono);font-size:12.5px;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.meta{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.lbl{font-size:12px;color:var(--muted)}
+.st{display:inline-flex;color:var(--xmuted)}
+.st svg.i{width:14px;height:14px}
+.is-running .st,.is-running .ico{color:var(--fg)}
+.is-failed .st,.is-failed .ico{color:var(--bad)}
+.is-failed .sum,.is-failed .meta{color:var(--bad)}
+.is-done .st{color:var(--ok)}
+.is-canceled .sum{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--xmuted)}
+.is-canceled .st{color:var(--muted)}
+.hd{all:unset;box-sizing:border-box;cursor:pointer}
+.hd.static{cursor:default}
+.body{font-family:var(--mono);font-size:12px;line-height:1.55;color:var(--fg);white-space:pre;overflow-x:auto;margin:0}
+.body .add{color:var(--ok)}.body .del{color:var(--bad)}.body .hunk{color:var(--muted)}
+.more{font-family:var(--ui);font-size:12px;color:var(--muted);margin-top:4px}
+.details{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px;margin-bottom:8px}
+.details dt{color:var(--muted)}.details dd{margin:0;font-family:var(--mono);overflow-wrap:anywhere}
+.errtext{font-family:var(--mono);font-size:12px;color:var(--bad);margin-top:8px;white-space:pre-wrap}
+.prose{font-size:14px;line-height:1.6;color:var(--fg)}
+.prose p{margin:0 0 8px}.prose p:last-child{margin:0}
+.prose ul{margin:0 0 8px;padding-left:18px}
+.prose code{font-family:var(--mono);font-size:12.5px;background:var(--s2);padding:1px 4px;border-radius:4px}
+.thinking{font-size:13px;line-height:1.55;color:var(--muted);white-space:pre-wrap}
+.caret::after{content:"";display:inline-block;width:6px;height:13px;margin-left:2px;vertical-align:-2px;background:var(--run);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ========== Plugin off · approximated Paseo default ========== */
+.s-off .drow{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;padding:4px 0}
+.s-off .drow b{font-weight:500;color:var(--fg)}
+.s-off .drow span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-off .dans{margin:8px 0}
+.s-off .derr{color:var(--bad);font-size:13px;margin:6px 0}
+
+/* ========== concepts ========== */
+.dim{color:var(--muted)}
+.steprow{display:grid;grid-template-columns:16px minmax(0,1fr) auto 14px;align-items:center;gap:8px;width:100%;min-height:26px;padding:0 6px;border-radius:6px}
+.steprow:hover{background:var(--s1)}
+.steprow .ico,.steprow .st{color:var(--muted)}
+.steprow .sum{color:var(--muted);font-size:12px}
+.steprow .meta{font-size:11.5px}
+.steprow svg.i{width:14px;height:14px}
+.is-running .steprow .sum{color:var(--fg)}
+.is-failed .steprow .sum{color:var(--bad)}
+.stepbody{margin:2px 6px 8px 30px;padding:8px 10px;background:var(--s1);border:1px solid var(--border);border-radius:6px}
+.answerblk{margin:10px 0}
+.errline{display:flex;gap:8px;align-items:flex-start;color:var(--bad);font-size:13px;margin:6px 0}
+.toggle{all:unset;cursor:pointer;font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:4px;padding:2px 6px;margin-left:-6px;border-radius:6px}
+.toggle:hover{background:var(--s2);color:var(--fg)}
+.toggle svg.i{width:14px;height:14px}
+.now{font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center;min-width:0}
+.now .sum{color:var(--fg)}
+.now svg.i{width:14px;height:14px}
+
+/* 1 · phase loop */
+.loop{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:13px}
+.ph{display:inline-flex;align-items:center;gap:5px;padding:2px 9px 2px 7px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+.ph svg.i{width:13px;height:13px}
+.ph.done{color:var(--fg)}
+.ph.done .st{color:var(--ok)}
+.ph.failed{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--border))}
+.ph.running{color:var(--fg);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.ph small{font-size:11px;color:var(--muted)}
+.arrow{color:var(--muted);font-size:12px}
+.blk{margin:8px 0 10px;display:grid;gap:6px}
+
+/* 2 · composer pill */
+.track{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.cpill{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted);max-width:100%}
+.cpill svg.i{width:13px;height:13px}
+.cpill .sum{font-size:12px}
+.cpill.live{color:var(--fg);border-color:var(--accent)}
+.cpill.bad{color:var(--bad)}
+.cpill button{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+
+/* 3 · footprint */
+.strip{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:8px 0 2px}
+.tile{all:unset;cursor:pointer;position:relative;width:24px;height:24px;border-radius:6px;background:var(--s2);display:grid;place-items:center;color:var(--muted)}
+.tile svg.i{width:13px;height:13px}
+.tile:hover{color:var(--fg)}
+.tile.sel{outline:1px solid var(--fg);outline-offset:1px}
+.tile.running{color:var(--fg);box-shadow:inset 0 0 0 1px var(--accent)}
+.tile.running::after{content:"";position:absolute;inset:-3px;border-radius:8px;border:1px solid var(--accent);animation:ring2 1.6s cubic-bezier(.16,1,.3,1) infinite}
+@keyframes ring2{0%{opacity:.8}100%{opacity:0;transform:scale(1.25)}}
+.tile.failed{background:color-mix(in srgb,var(--bad) 16%,var(--s0));color:var(--bad)}
+.tile.canceled{opacity:.45}
+.tile.edit{color:var(--fg)}
+.cap{font-size:12px;color:var(--muted);margin-bottom:8px}
+.tiledetail{margin:4px 0 10px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:var(--s1)}
+.tiledetail .hdr{display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:12.5px}
+
+/* 4 · net result */
+.result{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:10px 0;margin:10px 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;font-size:13px}
+.result dt{color:var(--muted)}
+.result dd{margin:0;display:flex;flex-wrap:wrap;gap:4px 14px;min-width:0}
+.result .item{display:inline-flex;gap:6px;align-items:center;min-width:0}
+.result .item svg.i{width:13px;height:13px}
+.result .ok{color:var(--ok)}.result .bad{color:var(--bad)}
+.result .mono{font-family:var(--mono);font-size:12.5px}
+
+/* 5 · by object */
+.split{display:flex;flex:1;min-height:0}
+.split .tl{flex:1}
+.objpanel{width:280px;border-left:1px solid var(--border);overflow:auto;padding:12px 14px;display:none}
+.c-object .objpanel{display:block}
+.compact .objpanel{display:none!important}
+.objpanel h3{font-size:12px;font-weight:600;margin:0 0 4px;color:var(--fg)}
+.objpanel .sec{margin-bottom:14px}
+.objpanel .sec>.lbl{display:block;margin-bottom:4px;font-size:11.5px}
+.obj{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;padding:5px 6px;border-radius:6px;margin:0 -6px}
+.obj.live{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.obj .sum{font-size:12px}
+.obj .ops{grid-column:1/-1;font-size:11.5px;color:var(--muted);display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.obj .ops svg.i{width:12px;height:12px}
+.obj .ops .ok{color:var(--ok)}.obj .ops .bad{color:var(--bad)}
+.objsheet{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;max-height:220px;overflow:auto}
+
+/* 6 · quiet unless exceptional */
+.flag{font-size:12px;color:var(--bad);display:flex;gap:6px;align-items:center;margin:0 6px 2px 30px}
+.flag.warn{color:var(--warn)}
+.flag svg.i{width:13px;height:13px}
+.exc .steprow{background:color-mix(in srgb,var(--bad) 7%,transparent)}
+.exc.long .steprow{background:color-mix(in srgb,var(--warn) 9%,transparent)}
+.exc .steprow .sum{color:var(--fg)}
+
+/* 7 · time bar */
+.tbar{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;margin:10px 0 4px;background:var(--s2)}
+.tbar span{min-width:2px;height:100%}
+.tbar .explore{background:color-mix(in srgb,var(--fg) 22%,transparent)}
+.tbar .think{background:color-mix(in srgb,var(--fg) 12%,transparent)}
+.tbar .change{background:color-mix(in srgb,var(--fg) 50%,transparent)}
+.tbar .verify{background:color-mix(in srgb,var(--fg) 75%,transparent)}
+.tbar .failed{background:var(--bad)}
+.tbar .running{background:var(--accent)}
+.tlegend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11.5px;color:var(--muted);margin-bottom:6px;font-variant-numeric:tabular-nums}
+.tlegend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:0}
+.side .feas{display:grid;gap:8px}
+.side .feas div{font-size:12.5px;color:var(--muted)}
+.side .feas b{color:var(--fg);font-weight:600;display:block;margin-bottom:1px}
+@media (max-width:1100px){.stage{grid-template-columns:1fr}.side{display:none}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="bar">
+    <h1>agent-activity <span>concepts</span></h1>
+    <div class="grp"><label>Ý tưởng</label><div class="seg" data-key="concept">
+      <button data-v="phase">1 Pha</button><button data-v="composer">2 Composer</button><button data-v="footprint">3 Dấu chân</button><button data-v="result">4 Kết quả</button><button data-v="object">5 Đối tượng</button><button data-v="quiet">6 Im lặng</button><button data-v="time">7 Thời gian</button><button data-v="combo">1+2+4</button></div></div>
+    <div class="grp"><label>Plugin</label><div class="seg" data-key="plugin"><button data-v="on">On</button><button data-v="off">Off</button></div></div>
+    <div class="grp"><label>Provider</label><div class="seg" data-key="provider"><button data-v="claude">Claude Code</button><button data-v="codex">Codex</button><button data-v="omp">OMP</button></div></div>
+    <div class="grp"><label>Theme</label><div class="seg" data-key="theme"><button data-v="light" aria-label="Light theme" data-icon="sun"></button><button data-v="dark" aria-label="Dark theme" data-icon="moon"></button></div></div>
+    <div class="grp"><label>Layout</label><div class="seg" data-key="layout"><button data-v="desktop" aria-label="Desktop" data-icon="monitor"></button><button data-v="compact" aria-label="Compact" data-icon="smartphone"></button></div></div>
+    <div class="grp">
+      <button class="btn primary" id="play"></button>
+      <button class="btn" id="step" data-icon="skip-forward">Step</button>
+      <button class="btn" id="end">Finish turn</button>
+      <button class="btn" id="reset" data-icon="rotate-ccw">Reset</button>
+      <div class="seg" data-key="speed"><button data-v="0.5">0.5×</button><button data-v="1">1×</button><button data-v="2">2×</button></div>
+      <span class="clock" id="clock">0:00</span>
+    </div>
+  </header>
+  <div class="stage">
+    <div class="canvas">
+      <div class="frame" id="frame">
+        <div class="fhead"><span class="title">Fix UTC date formatter</span><span class="prov" id="prov"></span></div>
+        <div class="split"><div class="tl" id="tl"><div class="tl-inner" id="tlin"></div></div><aside class="objpanel" id="objpanel" aria-label="Touched"></aside></div>
+        <div class="composer"><div id="sheet"></div><div class="track" id="pills"></div><div>Message the agent…</div></div>
+      </div>
+    </div>
+    <aside class="side">
+      <section><h2 id="optname"></h2><p id="optdesc"></p></section>
+      <section><h2>Đánh giá</h2><div class="feas" id="feas"></div></section>
+      <section style="border-bottom:0;padding-bottom:0"><h2>What just happened</h2></section>
+      <div class="log" id="log"></div>
+    </aside>
+  </div>
+</div>
+<script>
+const ICONS = {"bot": "<path d=\"M12 8V4H8\" /> <rect width=\"16\" height=\"12\" x=\"4\" y=\"8\" rx=\"2\" /> <path d=\"M2 14h2\" /> <path d=\"M20 14h2\" /> <path d=\"M15 13v2\" /> <path d=\"M9 13v2\" />", "brain": "<path d=\"M12 18V5\" /> <path d=\"M15 13a4.17 4.17 0 01-3-4 4.17 4.17 0 01-3 4\" /> <path d=\"M17.707 6.294A3 3 0 1012 5a3 3 0 10-5.707 1.294\" /> <path d=\"M17.996 5.125a4 4 0 012.526 5.77\" /> <path d=\"M18 18a4 4 0 002-7.465\" /> <path d=\"M19.967 17.482a4 4 0 11-7.967.517 4 4 0 11-7.967-.517\" /> <path d=\"M6 18a4 4 0 01-2-7.465\" /> <path d=\"M6.004 5.125a4 4 0 00-2.526 5.77\" />", "check": "<path d=\"M20 6 9 17l-5-5\" />", "chevron-down": "<path d=\"m6 9 6 6 6-6\" />", "chevron-right": "<path d=\"m9 18 6-6-6-6\" />", "circle-slash": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <line x1=\"9\" x2=\"15\" y1=\"15\" y2=\"9\" />", "file-pen": "<path d=\"M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34\" /> <path d=\"M14 2v5a1 1 0 0 0 1 1h5\" /> <path d=\"M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z\" />", "file-plus": "<path d=\"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z\" /> <path d=\"M14 2v5a1 1 0 0 0 1 1h5\" /> <path d=\"M9 15h6\" /> <path d=\"M12 18v-6\" />", "file-text": "<path d=\"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z\" /> <path d=\"M14 2v5a1 1 0 0 0 1 1h5\" /> <path d=\"M10 9H8\" /> <path d=\"M16 13H8\" /> <path d=\"M16 17H8\" />", "globe": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\" /> <path d=\"M2 12h20\" />", "list-checks": "<path d=\"M13 5h8\" /> <path d=\"M13 12h8\" /> <path d=\"M13 19h8\" /> <path d=\"m3 17 2 2 4-4\" /> <path d=\"m3 7 2 2 4-4\" />", "loader-circle": "<path d=\"M21 12a9 9 0 1 1-6.219-8.56\" />", "message-square": "<path d=\"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z\" />", "monitor": "<rect width=\"20\" height=\"14\" x=\"2\" y=\"3\" rx=\"2\" /> <line x1=\"8\" x2=\"16\" y1=\"21\" y2=\"21\" /> <line x1=\"12\" x2=\"12\" y1=\"17\" y2=\"21\" />", "moon": "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />", "pause": "<rect x=\"14\" y=\"3\" width=\"5\" height=\"18\" rx=\"1\" /> <rect x=\"5\" y=\"3\" width=\"5\" height=\"18\" rx=\"1\" />", "play": "<path d=\"M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z\" />", "power": "<path d=\"M12 2v10\" /> <path d=\"M18.4 6.6a9 9 0 1 1-12.77.04\" />", "rotate-ccw": "<path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\" /> <path d=\"M3 3v5h5\" />", "search": "<path d=\"m21 21-4.34-4.34\" /> <circle cx=\"11\" cy=\"11\" r=\"8\" />", "skip-forward": "<path d=\"M21 4v16\" /> <path d=\"M6.029 4.285A2 2 0 0 0 3 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z\" />", "smartphone": "<rect width=\"14\" height=\"20\" x=\"5\" y=\"2\" rx=\"2\" ry=\"2\" /> <path d=\"M12 18h.01\" />", "square-terminal": "<path d=\"m7 11 2-2-2-2\" /> <path d=\"M11 13h4\" /> <rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\" />", "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />", "triangle-alert": "<path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\" /> <path d=\"M12 9v4\" /> <path d=\"M12 17h.01\" />", "wrench": "<path d=\"M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z\" />", "x": "<path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" />"};
+const svg=(n,cls="")=>`<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const ACT={read:["Read","file-text"],edit:["Edit","file-pen"],write:["Write","file-plus"],run:["Run","square-terminal"],search:["Search","search"],web:["Web","globe"],delegate:["Delegate","bot"],plan:["Plan","list-checks"],tool:["Tool","wrench"],think:["Think","brain"],answer:["Answer","message-square"],error:["Error","triangle-alert"]};
+const ST={running:["loader-circle","spin"],done:["check",""],failed:["x",""],canceled:["circle-slash",""]};
+const ALWAYS=new Set(["answer","error"]);
+const PROSE=new Set(["think","delegate","plan"]);
+const RAW={run:{claude:"Bash",codex:"exec_command",omp:"bash"},read:{claude:"Read",codex:"read",omp:"read"},edit:{claude:"Edit",codex:"apply_patch",omp:"edit"},search:{claude:"Grep",codex:"grep",omp:"grep"},web:{claude:"WebFetch",codex:"web_search",omp:"fetch"},delegate:{claude:"Task",codex:"spawn_agent",omp:"task"},plan:{claude:"ExitPlanMode",codex:"update_plan",omp:"plan"},tool:{claude:"mcp__linear__search_issues",codex:"linear.search_issues",omp:"mcp_linear_search_issues"}};
+const PROV={claude:"Claude Code · claude-sonnet-5-5",codex:"Codex · gpt-5.5",omp:"OMP · default"};
+const OPTS={
+  pill:["A · Pills","Finished work shrinks to pills that hug their text; only live or opened work takes the full width. A finished turn reads as a short stack of tags. On compact screens a done pill drops its meta to stay one line; failed and canceled pills keep it."],
+  log:["B · Log","Full-width rows on fixed columns: icon, activity, summary, meta, status. A finished turn reads like a quiet log you scan by column; the running row carries a faint tint."],
+  spine:["C · Spine","A time gutter and one connected spine through the turn. Each node holds the activity icon; the running node pulses. Shows when each step started and how long it took."]};
+const RULES=[
+  ["R1","Running work opens on its own, so you can follow it without tapping."],
+  ["R2","Finished work collapses to one summary line: which file, which command, how much."],
+  ["R3","Your choice wins: a card you opened or closed stays that way until it unmounts."],
+  ["R4","Answer and Error cards always stay open."],
+  ["R5","A failed tool collapses too, but its summary turns red and keeps the exit code."],
+  ["R6","History loads collapsed; manual choices are not remembered across reloads."],
+  ["R7","Same activity, same icon and card on every provider. Only the raw tool name in the details differs."]];
+
+const S={style:"pill",plugin:"on",provider:"claude",theme:"light",layout:"desktop",speed:"1",playing:false,clock:0,ci:0,items:[],log:[],hit:null};
+
+/* ---------- content ---------- */
+const DATE_TS=["import { formatInTimeZone } from './tz';","","export type DateInput = Date | string;","","const pad = (n: number) => String(n).padStart(2, '0');","","/** Formats a date as `YYYY-MM-DD HH:mm` in the runner's local time. */","export function formatDate(input: DateInput) {","  const date = typeof input === 'string' ? new Date(input) : input;","  const iso = date.toISOString();","  return iso.slice(0, 16).replace('T', ' ');","}","","export function formatDay(input: DateInput) {","  return formatDate(input).slice(0, 10);","}"];
+const DATE_TEST=["import { describe, expect, it } from 'vitest';","import { formatDate } from './date';","","describe('formatDate', () => {","  it('formats local dates', () => {","    expect(formatDate(new Date(2026, 10, 4, 9, 5))).toBe('2026-11-04 09:05');","  });","","  it('keeps the UTC offset', () => {","    expect(formatDate('2026-11-04T23:30:00Z')).toBe('2026-11-05 06:30');","  });","});"];
+const GREP=["src/utils/date.ts:8:export function formatDate(input: DateInput) {","src/utils/date.ts:15:  return formatDate(input).slice(0, 10);","src/utils/date.test.ts:2:import { formatDate } from './date';","src/utils/date.test.ts:6:    expect(formatDate(new Date(2026, 10, 4, 9, 5)))","src/utils/date.test.ts:10:    expect(formatDate('2026-11-04T23:30:00Z'))","src/components/OrderRow.tsx:31:      <time>{formatDate(order.placedAt)}</time>","src/components/Receipt.tsx:12:  const placed = formatDate(receipt.createdAt);"];
+const DIFF1=["@@ -8,6 +8,8 @@ export function formatDate(input: DateInput) {","   const date = typeof input === 'string' ? new Date(input) : input;","-  const iso = date.toISOString();","+  const offset = date.getTimezoneOffset() * 60_000;","+  const local = new Date(date.getTime() - offset);","+  const iso = local.toISOString();","   return iso.slice(0, 16).replace('T', ' ');"," }"];
+const DIFF2=["@@ -10 +10 @@","-  const local = new Date(date.getTime() - offset);","+  const local = new Date(date.getTime() + offset);"];
+const OUT1=["> shop@2.4.0 test","> vitest run date","",""," ✓ src/utils/date.test.ts > formatDate > formats local dates 3ms"," × src/utils/date.test.ts > formatDate > keeps the UTC offset 5ms","   AssertionError: expected '2026-11-04 16:30' to be '2026-11-05 06:30'","     at src/utils/date.test.ts:10:51","",""," Test Files  1 failed (1)","      Tests  1 failed | 1 passed (2)","   Duration  412ms"];
+const OUT2=["> shop@2.4.0 test","> vitest run",""," ✓ src/utils/date.test.ts (2 tests) 4ms"," ✓ src/utils/money.test.ts (14 tests) 9ms"," ✓ src/cart/cart.test.ts (22 tests) 31ms"," ✓ src/cart/discounts.test.ts (17 tests) 18ms"," ✓ src/checkout/address.test.ts (12 tests) 15ms"," ✓ src/checkout/payment.test.ts (19 tests) 44ms"," ✓ src/components/OrderRow.test.tsx (9 tests) 61ms"," ✓ src/components/Receipt.test.tsx (8 tests) 52ms"," ✓ src/api/orders.test.ts (25 tests) 88ms","",""," Test Files  9 passed (9)","      Tests  128 passed (128)","   Duration  1.94s"];
+const THINK1="The failing test is in formatDate. I'll find every caller first, then read the implementation and its test side by side before touching anything.";
+const THINK2="Wrong sign. getTimezoneOffset() is positive west of UTC, so subtracting it moves the time the wrong way on this runner. Flip it, then run the whole suite rather than only the date file, since OrderRow and Receipt both render through formatDate.";
+const ANS1="The formatter drops the offset for UTC input. I'll patch `formatDate` and rerun the date tests.";
+const ANS2="Fixed. `formatDate` now converts to local time before formatting:\n- `src/utils/date.ts`: shift by the timezone offset, then slice the ISO string\n- the existing `keeps the UTC offset` case now passes\n\nFull suite: **128 passed**, 0 failed. `OrderRow` and `Receipt` render through the same function, so their timestamps change too.";
+
+const HIST=[
+  {kind:"user",text:"The nightly e2e job is red again. Find out why and tell me what to change."},
+  {id:"h1",activity:"think",status:"done",t0:1200,t1:3800,text:"The nightly run failed in checkout; I need the CI log before guessing. If it is the same Pay now flake as last week, the selector is the likely cause, but I should confirm with a repeated run rather than assume."},
+  {id:"h2",activity:"web",status:"done",t0:4000,t1:5100,summary:"github.com/acme/shop/actions/runs/9182",meta:"HTTP 200",details:[["URL","https://github.com/acme/shop/actions/runs/9182"]],body:{kind:"mono",text:"Run #9182 · nightly-e2e · failed after 6m 41s\n  ✓ catalog.spec.ts (14)\n  ✓ cart.spec.ts (21)\n  × checkout.spec.ts › pays with saved card\n    TimeoutError: locator('button:has-text(\"Pay now\")') detached"}},
+  {id:"h3",activity:"delegate",status:"done",t0:5300,t1:19800,summary:"Scan checkout spec for flaky selectors",meta:"6 actions",details:[["Agent","explore"]],body:{kind:"mono",text:"1. Read e2e/checkout.spec.ts\n2. Grep \"has-text\" in e2e/\n3. Read src/checkout/PayButton.tsx\n4. Grep \"data-testid\" in src/checkout\n5. Read e2e/support/selectors.ts\n6. Summarize: 3 text selectors re-render with the price"}},
+  {id:"h4",activity:"tool",status:"done",t0:20000,t1:20900,summary:"linear · search_issues",meta:"2 results",body:{kind:"mono",text:"SHOP-412  Flaky Pay now button in nightly e2e   (In progress)\nSHOP-377  Price skeleton re-mounts PayButton     (Done)"}},
+  {id:"h5",activity:"run",status:"canceled",t0:21000,t1:52000,summary:"npx playwright test checkout --repeat-each 20",meta:"canceled",details:[["cwd","/Users/mac/code/shop"]],body:{kind:"mono",text:"Running 60 tests using 4 workers\n  ✓ 1 checkout.spec.ts › pays with saved card (3.1s)\n  ✓ 2 checkout.spec.ts › pays with saved card (2.9s)\n  × 3 checkout.spec.ts › pays with saved card (30.0s)",hidden:41}},
+  {id:"h6",activity:"error",status:"failed",t0:52500,t1:52500,summary:"Stream disconnected before completion. The turn was retried."},
+  {id:"h7",activity:"plan",status:"done",t0:60000,t1:60400,summary:"Pin the Pay now selector to data-testid",body:{kind:"mono",text:"1. Pin the Pay now selector to data-testid=\"pay\"\n2. Wait for the price skeleton to unmount before clicking\n3. Re-run checkout 20× to confirm the flake is gone"}},
+  {id:"h8",activity:"answer",status:"done",t0:61000,t1:64000,text:"The nightly failure is the **Pay now** flake from SHOP-412: the button re-mounts while the price loads, so the text selector detaches. The plan above pins it to `data-testid=\"pay\"`. I stopped the 20× repeat run when the stream dropped; resume it after you approve the plan."},
+  {kind:"end",text:"Turn finished · 1m 04s"}
+];
+
+/* ---------- live script ---------- */
+let SCRIPT=[];
+function buildScript(){
+  const ev=[];const at=(t,fn)=>ev.push({t,fn});
+  const add=(t,it)=>at(t,()=>{S.items.push({...it,t0:t});});
+  const set=(t,id,p)=>at(t,()=>setItem(id,p,t));
+  const stream=(t,dur,id,text,step=4)=>{for(let i=step;i<text.length+step;i+=step){const n=Math.min(i,text.length);at(t+dur*(n/text.length),()=>{get(id).text=text.slice(0,n);});}};
+  const lines=(t,gap,id,arr)=>arr.forEach((_,i)=>at(t+gap*i,()=>{get(id).body={kind:"mono",text:arr.slice(0,i+1).slice(-12).join("\n"),hidden:Math.max(0,i+1-12)};}));
+  at(0,()=>{S.items.push({kind:"user",text:"The date formatter test fails on CI. Fix it and run the suite.",t0:0});log("You sent a prompt");});
+  add(400,{id:"a1",activity:"think",status:"running",text:"",summary:"",meta:""});
+  stream(500,2300,"a1",THINK1);
+  set(3000,"a1",{status:"done"});
+  add(3200,{id:"a2",activity:"search",status:"running",summary:"formatDate · grep src",meta:""});
+  set(4200,"a2",{status:"done",meta:"3 files · 7 matches",body:{kind:"mono",text:GREP.join("\n")}});
+  add(4400,{id:"a3",activity:"read",status:"running",summary:"utils/date.ts",meta:"",details:[["Path","/Users/mac/code/shop/src/utils/date.ts"]]});
+  add(4500,{id:"a4",activity:"read",status:"running",summary:"utils/date.test.ts",meta:"",details:[["Path","/Users/mac/code/shop/src/utils/date.test.ts"]]});
+  set(5300,"a3",{status:"done",meta:"16 lines",body:{kind:"mono",text:DATE_TS.join("\n")}});
+  set(5900,"a4",{status:"done",meta:"12 lines",body:{kind:"mono",text:DATE_TEST.join("\n")}});
+  add(6200,{id:"a5",activity:"answer",status:"running",text:""});
+  stream(6300,1500,"a5",ANS1,3);
+  set(7900,"a5",{status:"done"});
+  add(8200,{id:"a6",activity:"edit",status:"running",summary:"utils/date.ts",meta:"",details:[["Path","/Users/mac/code/shop/src/utils/date.ts"]]});
+  set(9000,"a6",{status:"done",meta:"+3 −1",body:{kind:"diff",text:DIFF1.join("\n")}});
+  add(9300,{id:"a7",activity:"run",status:"running",summary:"npm test -- date",meta:"",details:[["cwd","/Users/mac/code/shop"]],body:{kind:"mono",text:""}});
+  lines(9600,260,"a7",OUT1);
+  set(13200,"a7",{status:"failed",meta:"exit 1",errorText:"Process exited with code 1 · 1 failed | 1 passed"});
+  add(13500,{id:"a8",activity:"think",status:"running",text:"",summary:"",meta:""});
+  stream(13600,2600,"a8",THINK2,5);
+  set(16300,"a8",{status:"done"});
+  add(16500,{id:"a9",activity:"edit",status:"running",summary:"utils/date.ts",meta:"",details:[["Path","/Users/mac/code/shop/src/utils/date.ts"]]});
+  set(17200,"a9",{status:"done",meta:"+1 −1",body:{kind:"diff",text:DIFF2.join("\n")}});
+  add(17500,{id:"a10",activity:"run",status:"running",summary:"npm test",meta:"",details:[["cwd","/Users/mac/code/shop"]],body:{kind:"mono",text:""}});
+  lines(17800,230,"a10",OUT2);
+  set(22300,"a10",{status:"done",meta:"128 passed"});
+  add(22600,{id:"a11",activity:"answer",status:"running",text:""});
+  stream(22700,3200,"a11",ANS2,5);
+  set(26000,"a11",{status:"done"});
+  at(26200,()=>{S.items.push({kind:"end",text:"Turn finished · 26s"});S.playing=false;log("Turn finished","R2");});
+  ev.sort((a,b)=>a.t-b.t);return ev;
+}
+const get=id=>S.items.find(x=>x.id===id);
+function words(t){return (t.trim().match(/\S+/g)||[]).length}
+function firstLine(t){const l=(t||"").split("\n").find(x=>x.trim())||"";return l.length>110?l.slice(0,108)+"…":l}
+function isOpen(it){return ALWAYS.has(it.activity)||(it.manual??it.status==="running")}
+function setItem(id,p){
+  const it=get(id);const was=isOpen(it);const prev=it.status;Object.assign(it,p);
+  if(p.status&&p.status!==prev&&prev==="running"){
+    it.t1=S.clock;const now=isOpen(it);const name=`${ACT[it.activity][0]} · ${it.summary||firstLine(it.text)||"…"}`;
+    if(ALWAYS.has(it.activity)) log(`<em>${esc(name)}</em> finished and stays open`,"R4");
+    else if(it.manual!=null) log(`<em>${esc(name)}</em> finished; kept ${now?"open":"closed"} because you ${now?"opened":"closed"} it`,"R3");
+    else if(p.status==="failed") log(`<em>${esc(name)}</em> failed; collapsed with a red summary and ${esc(it.meta)}`,"R5");
+    else log(`<em>${esc(name)}</em> finished; collapsed to one line`,"R2");
+  }
+}
+function log(html,rule){S.log.unshift({t:S.clock,html});if(rule)S.hit=rule;}
+function addLogStart(it){ if(it.activity&&it.status==="running"){const r=ALWAYS.has(it.activity)?"R4":"R1";log(`<em>${ACT[it.activity][0]}</em> started; ${r==="R4"?"answer card opens and stays open":"card opened on its own"}`,r);} }
+
+/* ---------- derived ---------- */
+function view(it){
+  const v={...it};
+  if(it.activity==="think"){v.summary=firstLine(it.text)||"Thinking";v.meta=it.text?`${words(it.text)} words`:"";v.body={kind:"stream",text:it.text||""};}
+  if(it.body&&it.body.text===undefined)v.body=null;
+  return v;
+}
+function fmt(ms){const s=Math.max(0,Math.round(ms/1000));return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`}
+function dur(it){if(it.t1==null)return "";const d=Math.round((it.t1-it.t0)/100)/10;return d<1?`${Math.round(d*1000)}ms`:d<60?`${d.toFixed(1)}s`:`${Math.floor(d/60)}m ${Math.round(d%60)}s`}
+
+function md(t){
+  const inline=s=>esc(s).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");
+  const out=[];let list=null;
+  for(const line of t.split("\n")){
+    if(/^- /.test(line)){if(!list){list=[];}list.push(`<li>${inline(line.slice(2))}</li>`);continue}
+    if(list){out.push(`<ul>${list.join("")}</ul>`);list=null}
+    if(line.trim())out.push(`<p>${inline(line)}</p>`);
+  }
+  if(list)out.push(`<ul>${list.join("")}</ul>`);
+  return out.join("");
+}
+function bodyHtml(v){
+  let h="";
+  if(v.details){const raw=RAW[v.activity]?.[S.provider];h+=`<dl class="details">${v.details.map(([k,x])=>`<dt>${esc(k)}</dt><dd>${esc(x)}</dd>`).join("")}${raw?`<dt>Tool</dt><dd>${esc(raw)}</dd>`:""}</dl>`}
+  else if(RAW[v.activity]){h+=`<dl class="details"><dt>Tool</dt><dd>${esc(RAW[v.activity][S.provider])}</dd></dl>`}
+  const b=v.body;
+  if(b&&b.kind==="stream")h+=`<div class="thinking ${v.status==="running"?"caret":""}">${esc(b.text)}</div>`;
+  else if(b&&b.text){
+    const lines=b.text.split("\n").map(l=>{const e=esc(l);if(b.kind!=="diff")return e;return l.startsWith("@@")?`<span class="hunk">${e}</span>`:l.startsWith("+")?`<span class="add">${e}</span>`:l.startsWith("-")?`<span class="del">${e}</span>`:e}).join("\n");
+    h+=`<pre class="body">${lines}</pre>`;
+    if(b.hidden)h+=`<div class="more">${v.status==="running"?`showing the last 12 lines · ${b.hidden} earlier`:`… ${b.hidden} more lines`}</div>`;
+  }
+  if(v.errorText)h+=`<div class="errtext">${esc(v.errorText)}</div>`;
+  return h||`<div class="more">Waiting for output…</div>`;
+}
+const stIcon=s=>`<span class="st" aria-hidden="true">${svg(ST[s][0],ST[s][1])}</span>`;
+const aria=(v,open)=>`aria-expanded="${open}" aria-label="${esc(`${ACT[v.activity][0]} ${v.summary}, ${v.status}, ${open?"expanded":"collapsed"}`)}"`;
+
+
+function rOff(v){
+  const raw=v.activity==="think"?"Thinking":RAW[v.activity]?.[S.provider];
+  if(v.activity==="answer")return `<div class="dans prose">${md(v.text||"")}</div>`;
+  if(v.activity==="error")return `<div class="derr">${esc(v.summary)}</div>`;
+  const ic=v.status==="running"?svg("loader-circle","spin"):svg("chevron-right");
+  const tail=v.activity==="think"?"":` <span>${esc(v.summary)}</span>`;
+  return `<div class="drow">${ic}<b>${esc(raw)}</b>${tail}</div>`;
+}
+
+
+
+/* ================= concepts ================= */
+S.concept="combo";S.open={};S.steps={};S.sel={};S.sheet=false;
+const PHASE={think:"explore",search:"explore",read:"explore",web:"explore",delegate:"explore",tool:"explore",plan:"explore",edit:"change",write:"change",run:"verify"};
+const PH_LABEL={explore:"Explore",change:"Change",verify:"Verify"};
+const LONG_MS=4000; // demo threshold; the real rule would be ~30s
+const CONCEPTS={
+  phase:["1 · Vòng lặp pha","Mỗi turn chỉ còn một dòng pha Explore → Change → Verify. Lặp lại nghĩa là agent phải sửa lại; chi tiết nằm sau nút Show steps.",
+    [["Giữ tập trung","Timeline không mọc card; chỉ một dòng pha đổi trạng thái."],["Cách làm","Transformer trả [] cho tool/reasoning; một dòng tóm tắt theo dõi timeline của agent và tự gom pha."],["Rủi ro","Cần API theo dõi timeline trong SDK plugin; phân loại pha theo detail.type có thể sai với lệnh không phải test."]]],
+  composer:["2 · Dòng sống ở composer","Việc đang chạy hiện ở pill trên thanh composer, cạnh pill usage. Timeline chỉ có dòng mờ, không tự mở.",
+    [["Giữ tập trung","Chỗ bạn đang đọc không bị đẩy; liếc xuống composer là biết agent làm gì."],["Cách làm","addComposerPill + update() theo timeline subscription; transformer vẽ dòng mờ."],["Rủi ro","Tần suất update() của pill; pill chỉ thấy khi đang mở agent đó."]]],
+  footprint:["3 · Dấu chân","Mỗi hành động là một ô nhỏ trên một dòng, như lịch sử commit. Chạm một ô để xem chi tiết ngay dưới dòng.",
+    [["Giữ tập trung","Cả turn 11 bước chỉ cao một dòng; hình dạng dòng tự kể chuyện (nhiều đọc, có ✕)."],["Cách làm","Gom các item liên tiếp thành một dải; cần gom nhiều item thành một hàng."],["Rủi ro","Transformer chỉ thấy từng item; phải vẽ dải bằng component theo dõi timeline, các item gốc trả []."]]],
+  result:["4 · Kết quả ròng","Khi chạy: một dòng việc hiện tại. Khi xong: khối Result nói turn đã thay đổi gì, chạy gì, kết quả ra sao.",
+    [["Giữ tập trung","Review bằng kết quả, chỉ mở quá trình khi có gì lạ."],["Cách làm","Gom tool_call theo file/lệnh; tính +/− từ diff; chèn trước câu trả lời cuối."],["Rủi ro","Không biết chắc message nào là câu trả lời cuối cho tới khi turn kết thúc."]]],
+  object:["5 · Gom theo đối tượng","Panel Touched cạnh agent nhóm theo file và lệnh, không theo thời gian. Timeline chỉ có dòng mờ.",
+    [["Giữ tập trung","Câu hỏi 'đã đụng vào gì' có câu trả lời cố định ở một chỗ."],["Cách làm","addWorkspacePanel đọc timeline của agent; trên mobile mở bằng pill Touched."],["Rủi ro","Panel chiếm chỗ trên màn hình hẹp; đường dẫn tương đối cần cwd của agent."]]],
+  quiet:["6 · Im lặng trừ khi bất thường","Mọi thứ là dòng mờ và không tự mở. Chỉ lệnh lỗi hoặc chạy lâu mới tự mở và có cờ.",
+    [["Giữ tập trung","Mắt chỉ bị kéo khi thật sự cần; nền cho bài 2 và bài 3."],["Cách làm","Như spec hiện tại, đổi chính sách mở: chỉ exception tự mở. Ngưỡng chạy lâu ở mockup là 4s, thật là ~30s."],["Rủi ro","Card 'chạy lâu' cần đồng hồ ở client; phase streaming không báo thời gian."]]],
+  time:["7 · Thời gian đi đâu","Một thanh mảnh chia theo thời lượng từng hoạt động, đậm dần từ Explore tới Verify, đỏ khi lỗi.",
+    [["Giữ tập trung","Một dải 8px; nhìn ra ngay agent kẹt ở đâu."],["Cách làm","Thời điểm bắt đầu/kết thúc lấy từ timestamp của item; gom như ý 3."],["Rủi ro","Timestamp item lịch sử có thể không có thời lượng chính xác; là thông tin phụ."]]],
+  combo:["Ghép 1 + 2 + 4","Khi chạy: pill composer báo pha và việc hiện tại, timeline chỉ có dòng pha. Khi xong: dòng pha + khối Result trước câu trả lời cuối.",
+    [["Giữ tập trung","Timeline chỉ còn câu trả lời và bản tóm tắt; trạng thái sống nằm ở composer."],["Cách làm","Pill composer + một dòng tóm tắt theo dõi timeline; tool/reasoning gốc ẩn sau Show steps."],["Rủi ro","Cộng dồn rủi ro của 1, 2 và 4; cần xác minh API timeline trong SDK plugin trước."]]],
+};
+function setItem(id,p){const it=get(id);const prev=it.status;Object.assign(it,p);
+  if(p.status&&prev==="running"&&p.status!==prev){it.t1=S.clock;log(`<em>${esc(ACT[it.activity][0])} · ${esc(it.summary||firstLine(it.text)||"")}</em> → ${p.status}`);}}
+function addLogStart(it){if(it.activity&&it.status==="running")log(`<em>${ACT[it.activity][0]}</em> started`);}
+const steps=t=>t.filter(v=>v.activity&&v.activity!=="answer"&&v.activity!=="error");
+const answers=t=>t.filter(v=>v.activity==="answer");
+const errors=t=>t.filter(v=>v.activity==="error");
+function segments(st){const out=[];for(const v of st){const p=PHASE[v.activity]||"explore";const last=out[out.length-1];
+  if(last&&last.p===p){last.items.push(v)}else out.push({p,items:[v]})}
+  return out.map(s=>({...s,status:s.items.some(v=>v.status==="running")?"running":s.items[s.items.length-1].status==="failed"?"failed":"done"}));}
+function current(st){return [...st].reverse().find(v=>v.status==="running")}
+function elapsed(v){return fmt(S.clock-v.t0)}
+const parseDiff=m=>{const r=/\+(\d+)\s*−(\d+)/.exec(m||"");return r?[+r[1],+r[2]]:[0,0]};
+function net(st){const files=new Map(),cmds=new Map(),looked=[];
+  for(const v of st){if(v.activity==="edit"||v.activity==="write"||v.activity==="read"){const f=files.get(v.summary)||{path:v.summary,read:0,edit:0,add:0,del:0,live:false};
+      if(v.activity==="read")f.read++;else{f.edit++;const [a,d]=parseDiff(v.meta);f.add+=a;f.del+=d}
+      if(v.status==="running")f.live=true;files.set(v.summary,f)}
+    else if(v.activity==="run"){const c=cmds.get(v.summary)||{cmd:v.summary,runs:[],live:false};c.runs.push(v);if(v.status==="running")c.live=true;cmds.set(v.summary,c)}
+    else looked.push(v)}
+  return {files:[...files.values()],cmds:[...cmds.values()],looked};}
+const runIcon=r=>r.status==="running"?svg("loader-circle","spin"):svg(ST[r.status][0]);
+
+function stepRow(v,open,extra=""){
+  const [label,ic]=ACT[v.activity];
+  return `<div class="card is-${v.status} ${extra}"><button class="hd steprow" data-id="${v.id}" ${aria(v,open)}><span class="ico">${svg(ic)}</span><span class="sum ${PROSE.has(v.activity)?"prose-sum":""}">${esc(v.summary)}</span><span class="meta">${esc(v.meta||"")}</span>${stIcon(v.status)}</button>${open?`<div class="stepbody">${bodyHtml(v)}</div>`:""}</div>`;
+}
+const isOpenC=(v,auto=false)=>v.manual??auto;
+function exc(v){if(v.status==="failed")return {kind:"failed",text:`failed · ${v.meta||"error"}`};
+  if(v.status==="running"&&S.clock-v.t0>LONG_MS)return {kind:"long",text:`still running after ${elapsed(v)}, longer than usual`};
+  if(v.status==="canceled"&&v.t1-v.t0>30000)return {kind:"long",text:`canceled after ${dur(v)}`};return null}
+function answerHtml(v){return `<div class="answerblk prose ${v.status==="running"?"caret":""}">${md(v.text||"")}</div>`}
+function errHtml(v){return `<div class="errline">${svg("triangle-alert")}<span>${esc(v.summary)}</span></div>`}
+function inOrder(t,stepFn){return t.map(v=>v.activity==="answer"?answerHtml(v):v.activity==="error"?errHtml(v):stepFn(v)).join("")}
+function stepsToggle(key,st){const open=!!S.steps[key];
+  return `<button class="toggle" data-steps="${key}" aria-expanded="${open}">${svg(open?"chevron-down":"chevron-right")}${open?"Hide":"Show"} ${st.length} step${st.length===1?"":"s"}</button>${open?`<div>${st.map(v=>stepRow(v,isOpenC(v))).join("")}</div>`:""}`}
+function loopHtml(st){const segs=segments(st);if(!segs.length)return "";
+  return `<div class="loop" aria-label="Phases">${segs.map((s,i)=>`${i?`<span class="arrow" aria-hidden="true">→</span>`:""}<span class="ph ${s.status}">${s.status==="running"?svg("loader-circle","spin"):`<span class="st">${svg(ST[s.status][0])}</span>`}${PH_LABEL[s.p]}${s.items.length>1?` <small>×${s.items.length}</small>`:""}</span>`).join("")}</div>`}
+function nowHtml(st){const c=current(st);if(!c)return "";const [label,ic]=ACT[c.activity];
+  return `<div class="now">${svg("loader-circle","spin")}<span>${label}</span><span class="sum ${PROSE.has(c.activity)?"prose-sum":""}">${esc(c.summary||"…")}</span><span>· ${elapsed(c)}</span></div>`}
+function resultHtml(st){const n=net(st);
+  const files=n.files.filter(f=>f.edit);const read=n.files.filter(f=>!f.edit);
+  const rows=[];
+  rows.push(["Changed",files.length?files.map(f=>`<span class="item"><span class="mono">${esc(f.path)}</span><span class="dim">+${f.add} −${f.del}${f.edit>1?` · ${f.edit} edits`:""}</span></span>`).join(""):`<span class="dim">No files changed</span>`]);
+  if(n.cmds.length)rows.push(["Ran",n.cmds.map(c=>`<span class="item"><span class="mono">${esc(c.cmd)}</span>${c.runs.map(r=>`<span class="${r.status==="done"?"ok":r.status==="failed"?"bad":"dim"}" title="${esc(r.status)}">${runIcon(r)}</span>`).join("")}<span class="dim">${esc(c.runs[c.runs.length-1].meta||"")}</span></span>`).join("")]);
+  const lookedBits=[];if(read.length)lookedBits.push(`${read.length} file${read.length>1?"s":""} read`);
+  const cnt=a=>n.looked.filter(v=>v.activity===a).length;
+  [["search","search"],["web","web page"],["delegate","sub-agent"],["tool","tool call"],["plan","plan"]].forEach(([a,w])=>{const k=cnt(a);if(k)lookedBits.push(`${k} ${w}${k>1?"s":""}`)});
+  if(lookedBits.length)rows.push(["Looked at",`<span class="dim">${lookedBits.join(" · ")}</span>`]);
+  return `<dl class="result">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`}
+
+/* per-concept turn renderers; t = items of one turn (answers included), done = turn finished */
+const R={
+  phase(t,done,key){const st=steps(t);return `<div class="blk">${loopHtml(st)}${done?"":nowHtml(st)}<div>${stepsToggle(key,st)}</div></div>${errors(t).map(errHtml).join("")}${answers(t).map(answerHtml).join("")}`},
+  composer(t){return inOrder(t,v=>stepRow(v,isOpenC(v)))},
+  footprint(t,done,key){let html="",run=[];
+    const flush=()=>{if(!run.length)return;const selId=S.sel[key];const sel=run.find(v=>v.id===selId);
+      html+=`<div class="strip">${run.map(v=>`<button class="tile ${v.status} ${v.activity==="edit"?"edit":""} ${v.id===selId?"sel":""}" data-tile="${v.id}" data-key="${key}" aria-label="${esc(`${ACT[v.activity][0]} ${v.summary}, ${v.status}`)}" title="${esc(`${ACT[v.activity][0]} · ${v.summary}`)}">${svg(ACT[v.activity][1])}</button>`).join("")}</div>`;
+      const c=current(run);html+=`<div class="cap">${c?`${ACT[c.activity][0]} · ${esc(c.summary||"…")} · ${elapsed(c)}`:`${run.length} step${run.length>1?"s":""}${run.some(v=>v.status==="failed")?` · ${run.filter(v=>v.status==="failed").length} failed`:""}`}</div>`;
+      if(sel)html+=`<div class="tiledetail"><div class="hdr"><span class="ico">${svg(ACT[sel.activity][1])}</span><b>${ACT[sel.activity][0]}</b><span class="sum">${esc(sel.summary)}</span><span class="meta">${esc(sel.meta||"")}</span></div>${bodyHtml(sel)}</div>`;
+      run=[]};
+    for(const v of t){if(v.activity==="answer"||v.activity==="error"){flush();html+=v.activity==="answer"?answerHtml(v):errHtml(v)}else run.push(v)}
+    flush();return html},
+  result(t,done,key){const st=steps(t);const ans=answers(t);const fin=done?ans[ans.length-1]:null;
+    return `${errors(t).map(errHtml).join("")}${ans.filter(a=>a!==fin).map(answerHtml).join("")}${done?resultHtml(st):`<div class="blk">${nowHtml(st)||`<div class="now">${svg("loader-circle","spin")}<span>Working</span></div>`}<span class="cap" style="margin:0">${st.length} step${st.length===1?"":"s"} so far</span></div>`}<div>${stepsToggle(key,st)}</div>${fin?answerHtml(fin):""}`},
+  object(t){return inOrder(t,v=>stepRow(v,isOpenC(v)))},
+  quiet(t){return inOrder(t,v=>{const e=exc(v);return stepRow(v,isOpenC(v,!!e),e?`exc ${e.kind}`:"")+(e?`<div class="flag ${e.kind==="long"?"warn":""}">${svg(e.kind==="long"?"triangle-alert":"x")}${esc(e.text)}</div>`:"")})},
+  time(t){const st=steps(t);let tot=0;const segs=st.map(v=>{const d=Math.max(150,(v.t1??S.clock)-v.t0);tot+=d;return {v,d}});
+    const by={};segs.forEach(({v,d})=>{const k=v.activity==="think"?"think":PHASE[v.activity]||"explore";by[k]=(by[k]||0)+d});
+    const lbl={think:"Think",explore:"Explore",change:"Change",verify:"Verify"};
+    return `<div class="tbar" role="img" aria-label="Time per activity">${segs.map(({v,d})=>`<span class="${v.status==="running"?"running":v.status==="failed"?"failed":v.activity==="think"?"think":PHASE[v.activity]||"explore"}" style="flex:${d}" title="${esc(`${ACT[v.activity][0]} · ${v.summary} · ${(d/1000).toFixed(1)}s`)}"></span>`).join("")}</div>
+      <div class="tlegend">${Object.entries(by).map(([k,d])=>`<span><i class="tbar-${k}" style="background:${k==="think"?"color-mix(in srgb,var(--fg) 12%,transparent)":k==="explore"?"color-mix(in srgb,var(--fg) 22%,transparent)":k==="change"?"color-mix(in srgb,var(--fg) 50%,transparent)":"color-mix(in srgb,var(--fg) 75%,transparent)"}"></i>${lbl[k]} ${(d/1000).toFixed(1)}s</span>`).join("")}</div>${inOrder(t,v=>stepRow(v,isOpenC(v)))}`},
+  combo(t,done,key){const st=steps(t);const ans=answers(t);const fin=done?ans[ans.length-1]:null;
+    return `${errors(t).map(errHtml).join("")}${ans.filter(a=>a!==fin).map(answerHtml).join("")}<div class="blk">${loopHtml(st)}</div>${done?resultHtml(st):""}<div>${stepsToggle(key,st)}</div>${fin?answerHtml(fin):""}`},
+};
+
+function composerPills(lastTurn){
+  const usage=`<span class="cpill">Claude 12%/40%</span><span class="cpill">Ctx 31%</span>`;
+  if(!["composer","combo","object"].includes(S.concept)||S.plugin==="off")return usage;
+  const st=steps(lastTurn.items);const c=current(st);
+  if(S.concept==="object"){const n=net(st);const k=n.files.length+n.cmds.length;
+    return `${usage}<span class="cpill ${k?"":"dim"}"><button data-sheet="1" aria-expanded="${S.sheet}">${svg("list-checks")} Touched · ${k}</button></span>`}
+  if(c){const seg=segments(st).find(s=>s.status==="running");
+    return `${usage}<span class="cpill live">${svg("loader-circle","spin")}${S.concept==="combo"?`<b style="font-weight:600">${PH_LABEL[seg.p]}</b> ·`:""}<span>${ACT[c.activity][0]}</span><span class="sum ${PROSE.has(c.activity)?"prose-sum":""}">${esc(c.summary||"…")}</span><span>${elapsed(c)}</span></span>`}
+  const failedNow=st.length&&st[st.length-1].status==="failed";
+  return `${usage}<span class="cpill ${failedNow?"bad":""}">${svg(lastTurn.done?"check":"loader-circle",lastTurn.done?"":"spin")}${lastTurn.done?`Idle · last turn ${st.length} steps`:"Thinking…"}</span>`}
+function objectPanel(lastTurn){const n=net(steps(lastTurn.items));
+  const ops=f=>[f.read?`read${f.read>1?` ×${f.read}`:""}`:"",f.edit?`edit${f.edit>1?` ×${f.edit}`:""}`:""].filter(Boolean).join(" · ");
+  const files=n.files.map(f=>`<div class="obj ${f.live?"live":""}"><span class="sum">${esc(f.path)}</span><span class="meta">${f.edit?`+${f.add} −${f.del}`:""}</span><span class="ops">${f.live?svg("loader-circle","spin"):""}${ops(f)}</span></div>`).join("")||`<div class="dim" style="font-size:12px">None yet</div>`;
+  const cmds=n.cmds.map(c=>`<div class="obj ${c.live?"live":""}"><span class="sum">${esc(c.cmd)}</span><span class="meta">${esc(c.runs[c.runs.length-1].meta||"")}</span><span class="ops">${c.runs.map(r=>`<span class="${r.status==="done"?"ok":r.status==="failed"?"bad":""}">${runIcon(r)}</span>`).join(" ")}</span></div>`).join("")||`<div class="dim" style="font-size:12px">None yet</div>`;
+  const other=n.looked.filter(v=>v.activity!=="think").map(v=>`<div class="obj ${v.status==="running"?"live":""}"><span class="sum ${PROSE.has(v.activity)?"prose-sum":""}">${esc(v.summary||"…")}</span><span class="meta">${esc(v.meta||"")}</span><span class="ops">${svg(ACT[v.activity][1])}${ACT[v.activity][0]}</span></div>`).join("");
+  return `<h3>Touched this turn</h3><div class="sec"><span class="lbl">Files</span>${files}</div><div class="sec"><span class="lbl">Commands</span>${cmds}</div>${other?`<div class="sec"><span class="lbl">Looked up</span>${other}</div>`:""}`}
+
+function render(){
+  const frame=document.getElementById("frame");
+  document.body.className="t-"+S.theme;
+  frame.className=`frame ${S.layout==="compact"?"compact":""} c-${S.plugin==="off"?"off":S.concept} s-off`;
+  document.getElementById("prov").textContent=PROV[S.provider];
+  const turns=[];let cur=null;
+  for(const x of [...HIST,...S.items]){
+    if(x.kind==="user"){cur={user:x.text,base:x.t0??0,items:[],done:false,end:""};turns.push(cur);continue}
+    if(x.kind==="end"){cur.done=true;cur.end=x.text;continue}
+    const v=view(x);v.base=cur.base;cur.items.push(v);
+  }
+  let html="";
+  turns.forEach((t,i)=>{const key="t"+i;html+=`<div class="user"><div>${esc(t.user)}</div></div>`;
+    html+=S.plugin==="off"?t.items.map(rOff).join(""):R[S.concept](t.items,t.done,key);
+    if(t.done)html+=`<div class="turnend">${esc(t.end)}</div>`;});
+  const tl=document.getElementById("tl");const atBottom=tl.scrollHeight-tl.scrollTop-tl.clientHeight<60;
+  document.getElementById("tlin").innerHTML=html;
+  if(S.playing||atBottom)tl.scrollTop=tl.scrollHeight;
+  const last=turns[turns.length-1];
+  document.getElementById("pills").innerHTML=composerPills(last);
+  document.getElementById("objpanel").innerHTML=S.concept==="object"?objectPanel(last):"";
+  document.getElementById("sheet").innerHTML=S.concept==="object"&&S.sheet&&S.layout==="compact"&&S.plugin==="on"?`<div class="objsheet objpanel" style="display:block;width:auto;border-left:1px solid var(--border)">${objectPanel(last)}</div>`:"";
+  document.getElementById("clock").textContent=fmt(S.clock);
+  const [n,d,f]=CONCEPTS[S.concept];
+  document.getElementById("optname").textContent=S.plugin==="off"?"Plugin off · Paseo default (approximation)":n;
+  document.getElementById("optdesc").textContent=S.plugin==="off"?"Plugin tắt thì Paseo vẽ lại hàng tool mặc định.":d;
+  document.getElementById("feas").innerHTML=S.plugin==="off"?"":f.map(([k,v])=>`<div><b>${k}</b>${esc(v)}</div>`).join("");
+  document.getElementById("log").innerHTML=S.log.map(e=>`<div><span>${fmt(e.t)}</span><span>${e.html}</span></div>`).join("")||`<div><span></span><span>Bấm Play để chạy một turn mới dưới turn đã xong.</span></div>`;
+  document.querySelectorAll(".seg").forEach(seg=>seg.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(String(S[seg.dataset.key]??"")===b.dataset.v))));
+  document.getElementById("play").innerHTML=S.playing?`${svg("pause")}Pause`:`${svg("play")}${S.ci>=SCRIPT.length?"Replay":"Play"}`;
+}
+
+/* ---------- clock + events ---------- */
+function runUntil(t){while(S.ci<SCRIPT.length&&SCRIPT[S.ci].t<=t){const e=SCRIPT[S.ci++];S.clock=e.t;const before=S.items.length;e.fn();if(S.items.length>before)addLogStart(S.items[S.items.length-1]);}
+  S.clock=Math.min(t,SCRIPT.length?SCRIPT[SCRIPT.length-1].t:t);}
+function reset(){S.items=[];S.log=[];S.clock=0;S.ci=0;S.playing=false;S.steps={};S.sel={};HIST.forEach(h=>delete h.manual);SCRIPT=buildScript();}
+let lastTs=0;function tick(ts){if(S.playing){const dt=lastTs?Math.min(100,ts-lastTs):0;runUntil(S.clock+dt*Number(S.speed));render();}lastTs=ts;requestAnimationFrame(tick);}
+document.querySelectorAll("[data-icon]").forEach(b=>b.insertAdjacentHTML("afterbegin",svg(b.dataset.icon)));
+document.querySelectorAll(".seg").forEach(seg=>seg.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S[seg.dataset.key]=b.dataset.v;render();}));
+document.getElementById("frame").addEventListener("click",e=>{
+  const st=e.target.closest("[data-steps]");if(st){S.steps[st.dataset.steps]=!S.steps[st.dataset.steps];render();return}
+  const tile=e.target.closest("[data-tile]");if(tile){const k=tile.dataset.key;S.sel[k]=S.sel[k]===tile.dataset.tile?null:tile.dataset.tile;render();return}
+  if(e.target.closest("[data-sheet]")){S.sheet=!S.sheet;render();return}
+  const b=e.target.closest("button.hd[data-id]");if(!b)return;const it=get(b.dataset.id)||HIST.find(x=>x.id===b.dataset.id);
+  it.manual=!(b.getAttribute("aria-expanded")==="true");render();});
+document.getElementById("play").onclick=()=>{if(S.ci>=SCRIPT.length)reset();S.playing=!S.playing;lastTs=0;render();};
+document.getElementById("step").onclick=()=>{S.playing=false;const sig=()=>S.items.map(x=>x.id+x.status).join();const a=sig();while(S.ci<SCRIPT.length&&sig()===a)runUntil(SCRIPT[S.ci].t);render();};
+document.getElementById("end").onclick=()=>{S.playing=false;runUntil(1e9);render();};
+document.getElementById("reset").onclick=()=>{reset();render();};
+reset();render();requestAnimationFrame(tick);
+
+</script>
+</body>
+</html>

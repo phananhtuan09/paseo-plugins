@@ -1,0 +1,7 @@
+interface:
+  display_name: "Senior Code Review"
+  short_description: "Deep, mentoring code review of your own code (report-only)"
+  default_prompt: "Use $senior-code-review to review this code the way a senior developer would."
+
+policy:
+  allow_implicit_invocation: false
