@@ -42,20 +42,21 @@ export function segmentRows(rows: readonly SegmentRow[]): Map<string, SegmentInf
     }
     let end = index;
     while (end + 1 < rows.length && rows[end + 1].step) end += 1;
-    markRun(rows.slice(index, end + 1), result);
+    markRun(rows.slice(index, end + 1), rows[end + 1], result);
     index = end + 1;
   }
   return result;
 }
 
-function markRun(run: readonly SegmentRow[], result: Map<string, SegmentInfo>): void {
+function markRun(run: readonly SegmentRow[], next: SegmentRow | undefined, result: Map<string, SegmentInfo>): void {
   const steps = run.map((row) => row.step!);
   result.set(run[0].key, {
     run: {
       steps: run.length,
       failed: steps.filter((step) => step.status === "failed").length,
       startMs: run[0].time,
-      endMs: run[run.length - 1].time,
+      // Rows carry start times, so the row after the run is when its last step ended.
+      endMs: next?.time ?? run[run.length - 1].time,
       running: steps.some((step) => step.status === "running"),
     },
   });

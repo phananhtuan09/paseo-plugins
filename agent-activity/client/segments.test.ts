@@ -55,3 +55,9 @@ test("parallel running tools count as one running run", () => {
   assert.equal(info.get("a")?.run?.running, true);
   assert.equal(info.get("a")?.run?.steps, 3);
 });
+
+test("a run lasts until the row after it starts, so a single step has a duration", () => {
+  const info = segmentRows([step("a", "run", "done", 1000), { key: "msg", time: 9000 }]);
+  assert.equal(info.get("a")?.run?.endMs, 9000);
+  assert.equal(info.get("a")?.run?.startMs, 1000);
+});
