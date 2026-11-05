@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { type SegmentRow, segmentRows } from "./segments.ts";
+import { type SegmentRow, rowStartMs, segmentRows } from "./segments.ts";
 
 const step = (key: string, activity: any, status: any = "done", time = 0): SegmentRow => ({
   key,
@@ -66,4 +66,10 @@ test("a run starts when the entry before it did, because a finished step is stam
   const info = segmentRows([{ ...step("a", "run", "done", 30_000), before: 21_000 }, { key: "msg", time: 31_000 }]);
   assert.equal(info.get("a")?.run?.startMs, 21_000);
   assert.equal(info.get("a")?.run?.endMs, 31_000);
+});
+
+test("rowStartMs uses the entry before a step but not before a message", () => {
+  assert.equal(rowStartMs({ ...step("a", "run", "done", 30_000), before: 21_000 }), 21_000);
+  assert.equal(rowStartMs(step("a", "run", "done", 30_000)), 30_000);
+  assert.equal(rowStartMs({ key: "u", time: 5_000, before: 1_000 }), 5_000);
 });

@@ -10,6 +10,11 @@ export interface SegmentRow {
   step?: { activity: Activity; status: StepStatus };
 }
 
+/** When a row's work began: a finished step is stamped at its end, so it began when the entry before it did. */
+export function rowStartMs(row: SegmentRow): number {
+  return row.step ? (row.before ?? row.time) : row.time;
+}
+
 export interface RunInfo {
   steps: number;
   failed: number;
@@ -56,8 +61,7 @@ function markRun(run: readonly SegmentRow[], next: SegmentRow | undefined, resul
     run: {
       steps: run.length,
       failed: steps.filter((step) => step.status === "failed").length,
-      // A finished tool call is stamped when it ended, so the run starts when the entry before it did.
-      startMs: run[0].before ?? run[0].time,
+      startMs: rowStartMs(run[0]),
       // The row after the run starts once its last step ended.
       endMs: next?.time ?? run[run.length - 1].time,
       running: steps.some((step) => step.status === "running"),

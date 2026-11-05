@@ -3,7 +3,7 @@ import { usePaseo } from "@getpaseo/plugin/client";
 import { useEffect, useSyncExternalStore } from "react";
 import type { ActivityStep } from "../shared/activity.ts";
 import { classifyReasoning, classifyToolCall } from "./classify.ts";
-import { type SegmentInfo, type SegmentRow, segmentRows } from "./segments.ts";
+import { type SegmentInfo, type SegmentRow, rowStartMs, segmentRows } from "./segments.ts";
 
 type Paseo = PluginClientContext["paseo"];
 
@@ -11,11 +11,11 @@ const REFETCH_DELAY_MS = 300;
 const TAIL_LIMIT = 200;
 const NO_SEGMENTS: ReadonlyMap<string, SegmentInfo> = new Map();
 
-/** Key that links a rendered step to its row: tool call id, or the timestamp for reasoning. */
-export function stepKey(step: Pick<ActivityStep, "callId">, timestamp: Date | string): string {
+/** Key that links a rendered step to its row: tool call id, or the activity and timestamp when there is none. */
+export function stepKey(step: Pick<ActivityStep, "callId" | "activity">, timestamp: Date | string): string {
   if (step.callId) return step.callId;
   const ms = typeof timestamp === "string" ? Date.parse(timestamp) : timestamp.getTime();
-  return `think:${ms}`;
+  return `${step.activity}:${ms}`;
 }
 
 interface TimelineRow extends SegmentRow {
@@ -38,6 +38,7 @@ class AgentTimelineStore {
   private stop: (() => void) | undefined;
   private refetchTimer: ReturnType<typeof setTimeout> | undefined;
   private disposed = false;
+  private fetchSeq = 0;
 
   constructor(private readonly agentId: string) {}
 
@@ -49,8 +50,17 @@ class AgentTimelineStore {
   getSnapshot = (): AgentTimelineState => this.state;
 
   acquire(paseo: Paseo): () => void {
+    if (this.refs === 0) {
+      try {
+        this.start(paseo);
+      } catch (error) {
+        // A failed start leaves no reference behind, so the next acquire tries again.
+        this.shutdown();
+        console.error("agent-activity: timeline subscription failed", error);
+        return () => {};
+      }
+    }
     this.refs += 1;
-    if (this.refs === 1) this.start(paseo);
     let released = false;
     return () => {
       if (released) return;
@@ -71,10 +81,13 @@ class AgentTimelineStore {
     const timeline = paseo.agents.ref(this.agentId).timeline;
     const refetch = () => {
       this.refetchTimer = undefined;
+      this.fetchSeq += 1;
+      const seq = this.fetchSeq;
       timeline
         .refetch({ direction: "tail", limit: TAIL_LIMIT })
         .then((payload) => {
-          if (!this.disposed) this.apply(payload.entries as unknown as RawEntry[]);
+          // A slower, older response must not overwrite a newer one.
+          if (!this.disposed && seq === this.fetchSeq) this.apply(payload.entries as unknown as RawEntry[]);
         })
         .catch(() => {
           // Without a timeline the headers are skipped and each step still renders on its own.
@@ -108,7 +121,7 @@ class AgentTimelineStore {
   }
 
   private apply(entries: readonly RawEntry[]): void {
-    const rows = buildRows(entries);
+    const rows = buildRows(entries, this.state.running);
     this.state = { ...this.state, rows, loaded: true, segments: segmentRows(rows) };
     this.emit();
   }
@@ -124,10 +137,10 @@ interface RawEntry {
   timestamp: string;
 }
 
-function buildRows(entries: readonly RawEntry[]): TimelineRow[] {
+function buildRows(entries: readonly RawEntry[], turnRunning: boolean): TimelineRow[] {
   const rows: TimelineRow[] = [];
   let before: number | undefined;
-  for (const entry of entries) {
+  for (const [index, entry] of entries.entries()) {
     const time = Date.parse(entry.timestamp);
     const previous = before;
     before = time;
@@ -136,15 +149,15 @@ function buildRows(entries: readonly RawEntry[]): TimelineRow[] {
     if (item.type === "tool_call") {
       result = classifyToolCall(item as never, item.status === "running" ? "streaming" : "complete");
     } else if (item.type === "reasoning") {
-      // Reasoning is complete once a later row exists; the last row may still be streaming.
-      result = classifyReasoning(item as never, "complete");
+      // Reasoning is complete once a later row exists; the last row is still streaming while the turn runs.
+      result = classifyReasoning(item as never, turnRunning && index === entries.length - 1 ? "streaming" : "complete");
     }
     if (result === null) continue; // hidden rows render nothing
     if (result) {
       rows.push({ key: stepKey(result, entry.timestamp), time, kind: "step", step: result, before: previous, turnId: entry.turnId });
     } else {
       const kind = item.type === "user_message" ? "user" : item.type === "assistant_message" ? "assistant" : "other";
-      rows.push({ key: `${kind}:${time}:${rows.length}`, time, kind, turnId: entry.turnId });
+      rows.push({ key: `${kind}:${time}:${rows.length}`, time, kind, before: previous, turnId: entry.turnId });
     }
   }
   return rows;
@@ -171,12 +184,13 @@ const noopSubscribe = () => () => {};
 /** Run and phase header data for one step, or undefined while disabled or not loaded. */
 export function useSegmentInfo(agentId: string, key: string, enabled: boolean): SegmentInfo | undefined {
   const paseo = usePaseo();
-  const store = getAgentTimeline(agentId);
-  useEffect(() => (enabled ? store.acquire(paseo) : undefined), [enabled, store, paseo]);
+  // No store is created while the level shows no headers, so unwatched agents leave nothing behind.
+  const store = enabled ? getAgentTimeline(agentId) : undefined;
+  useEffect(() => store?.acquire(paseo), [store, paseo]);
   const state = useSyncExternalStore(
-    enabled ? store.subscribe : noopSubscribe,
-    enabled ? store.getSnapshot : () => EMPTY,
-    enabled ? store.getSnapshot : () => EMPTY,
+    store ? store.subscribe : noopSubscribe,
+    store ? store.getSnapshot : () => EMPTY,
+    store ? store.getSnapshot : () => EMPTY,
   );
   return state.segments.get(key);
 }
@@ -211,7 +225,7 @@ export function followState(state: AgentTimelineState): FollowState {
   }
   const steps = turn.filter((row) => row.step);
   if (!state.loaded || steps.length === 0) return { kind: "hidden" };
-  const first = turn[0].time;
+  const first = rowStartMs(turn[0]);
   const last = turn[turn.length - 1].time;
   return {
     kind: "done",

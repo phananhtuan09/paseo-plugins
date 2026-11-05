@@ -3,6 +3,8 @@ updates:
   - package-ecosystem: npm
     directories:
       - /usage-pill
+      - /agent-activity
+      - /agent-activity/e2e
     schedule:
       interval: weekly
     open-pull-requests-limit: 5

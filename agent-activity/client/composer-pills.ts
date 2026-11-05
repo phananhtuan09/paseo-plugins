@@ -108,19 +108,29 @@ export function contributeComposerPills(client: PluginClientContext): () => void
       button: followButton(followState(store.state), Date.now()),
     });
     const detail = client.addComposerPill({ id: "detail", workspaceId, agentId: id, button: detailButton() });
-    const render = () => follow.update(followButton(followState(store.state), Date.now()));
+    // Elapsed time only changes while something runs, so the timer exists only then.
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const syncTimer = () => {
+      const kind = followState(store.state).kind;
+      const ticking = kind === "step" || kind === "answering";
+      if (ticking && timer === undefined) timer = setInterval(render, 1000);
+      else if (!ticking && timer !== undefined) {
+        clearInterval(timer);
+        timer = undefined;
+      }
+    };
+    const render = () => {
+      follow.update(followButton(followState(store.state), Date.now()));
+      syncTimer();
+    };
     const stopStore = store.subscribe(render);
-    // Elapsed time only changes while something runs, so tick only then.
-    const timer = setInterval(() => {
-      const state = followState(store.state);
-      if (state.kind === "step" || state.kind === "answering") render();
-    }, 1000);
+    syncTimer();
     agents.set(id, {
       detail,
       follow,
       watch,
       release: () => {
-        clearInterval(timer);
+        if (timer !== undefined) clearInterval(timer);
         stopStore();
         releaseStore?.();
         follow.remove();
@@ -144,7 +154,13 @@ export function contributeComposerPills(client: PluginClientContext): () => void
     .then(({ subscription }) => {
       subscription.subscribe({
         snapshot: ({ entries }) => {
-          removeAll();
+          // Keep the pills and stores of agents that are still listed; only agents that vanished are released.
+          const listed = new Set(entries.map(({ agent }) => agent.id));
+          for (const [id, pills] of agents) {
+            if (listed.has(id)) continue;
+            pills.release();
+            agents.delete(id);
+          }
           for (const { agent } of entries) register(agent);
         },
         update: (message) => {
