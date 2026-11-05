@@ -79,7 +79,7 @@ test("@K1 live: sleep 8 && echo done shows Running pill and chip, then Ran and D
   // Auto-allow the Bash permission the fixture agent asks for.
   const allow = setInterval(() => execFile("paseo", ["permit", "allow", agentId, "--all", "--home", home], () => {}), 1500);
   try {
-    const pill = page.getByText(/^.*Running sleep 8 && echo done · \d+s$/).first();
+    const pill = page.getByRole("button", { name: /^(Explore|Change|Verify) · Running sleep 8 && echo done$/ }).first();
     await expect(pill).toBeVisible({ timeout: 60_000 });
     const runningChip = page.getByRole("button", { name: /^Running sleep 8 && echo done, running, collapsed$/ });
     await expect(runningChip).toBeVisible();
@@ -87,7 +87,7 @@ test("@K1 live: sleep 8 && echo done shows Running pill and chip, then Ran and D
     await shot(page, info, "live-running");
     const ranChip = page.getByRole("button", { name: /^Ran sleep 8 && echo done, done, collapsed$/ }).last();
     await expect(ranChip).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText(/^Done · \d+ steps?/).first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("button", { name: /^Done · \d+ steps?/ }).first()).toBeVisible({ timeout: 20_000 });
     await checkpoint(info, "live", { pillText, doneChip: await ranChip.innerText() });
     await shot(page, info, "live-done");
   } finally {
@@ -101,14 +101,14 @@ test("@K4 plugin disable restores defaults and removes pills; enable brings them
   await expect(page.getByRole("button", { name: /^Read .*collapsed$/ })).toBeVisible();
   paseo("plugin", "disable", "agent-activity");
   try {
-    await expect(page.getByText(/^Detail · /)).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByRole("button", { name: /^Detail level: / })).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByRole("button", { name: /^Edited .*collapsed$/ })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /, (done|failed), (collapsed|expanded)$/ })).toHaveCount(0);
     await shot(page, info, "disabled");
   } finally {
     paseo("plugin", "enable", "agent-activity");
   }
-  await expect(page.getByText(/^Detail · /).first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: /^Detail level: / }).first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("button", { name: /^Read .*collapsed$/ })).toBeVisible({ timeout: 20_000 });
   await checkpoint(info, "disable-enable", { disabledHadNoPill: true, reEnabled: true });
 });

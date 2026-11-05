@@ -54,7 +54,7 @@ Open an agent in the Paseo app and send a prompt that reads a file, edits it and
 Confirm the following:
 
 - The timeline shows `Read`, `Edited` with `+X −Y`, and a failed `Ran` with its exit code, in the Brief chips.
-- The composer shows a follow pill (`Running …`, then `Done · N steps · …`) and a `Detail · Brief` pill.
+- The composer shows a short follow pill (the phase, then `Done`; hover for the full step and step count) and a pill with only the Detail level (`Brief`, `Steps` or `Full`).
 - Tapping the Detail pill cycles Brief, Steps and Full, and every step changes with it.
 - At Steps, each run has a header with its step count and duration, and a phase label sits above each phase.
 - At Full, a shell step shows its full command highlighted, and a read of a `.ts` file shows highlighted code.

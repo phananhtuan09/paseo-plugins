@@ -13,12 +13,15 @@ import { formatDuration } from "./format.ts";
 const LABELS: Record<DetailLevel, string> = { brief: "Brief", steps: "Steps", full: "Full" };
 const TARGET_MAX = 36;
 
+// The pill shows only the level; the host requires an icon, so it gets one that draws nothing.
+const noIcon = () => null;
+
 function detailButton() {
   const level = getDetailLevel();
   return {
     title: `Detail level: ${LABELS[level]}. Tap to switch.`,
-    icon: "ListTree",
-    label: `Detail · ${LABELS[level]}`,
+    icon: noIcon,
+    label: LABELS[level],
     behavior: {
       kind: "action" as const,
       onPress() {
@@ -30,16 +33,16 @@ function detailButton() {
 
 const noop = { kind: "action" as const, onPress() {} };
 
-function followButton(state: FollowState, now: number) {
+function followButton(state: FollowState) {
   switch (state.kind) {
     case "step": {
       const { step } = state;
       const target = step.target.length > TARGET_MAX ? `${step.target.slice(0, TARGET_MAX)}…` : step.target;
       const text = `${ACTIVITY_META[step.activity].phase} · ${activityLabel(step.activity, "running")} ${target}`;
       return {
-        title: `${text} (${formatDuration(now - state.startMs)})`,
+        title: text,
         icon: ACTIVITY_META[step.activity].icon,
-        label: `${text} · ${formatDuration(now - state.startMs)}`,
+        label: ACTIVITY_META[step.activity].phase,
         behavior: noop,
         visible: true,
       };
@@ -48,7 +51,7 @@ function followButton(state: FollowState, now: number) {
       return {
         title: "Answering",
         icon: "MessageSquare",
-        label: `Answering · ${formatDuration(now - state.startMs)}`,
+        label: "Answering",
         behavior: noop,
         visible: true,
       };
@@ -63,7 +66,7 @@ function followButton(state: FollowState, now: number) {
       return {
         title: `${label} · ${parts.join(" · ")}`,
         icon: "Check",
-        label: `${label} · ${parts.join(" · ")}`,
+        label,
         behavior: noop,
         visible: true,
       };
@@ -107,32 +110,16 @@ export function contributeComposerPills(client: PluginClientContext): () => void
       id: "follow",
       workspaceId,
       agentId: id,
-      button: followButton(followState(store.state), Date.now()),
+      button: followButton(followState(store.state)),
     });
     const detail = client.addComposerPill({ id: "detail", workspaceId, agentId: id, button: detailButton() });
-    // Elapsed time only changes while something runs, so the timer exists only then.
-    let timer: ReturnType<typeof setInterval> | undefined;
-    const syncTimer = () => {
-      const kind = followState(store.state).kind;
-      const ticking = kind === "step" || kind === "answering";
-      if (ticking && timer === undefined) timer = setInterval(render, 1000);
-      else if (!ticking && timer !== undefined) {
-        clearInterval(timer);
-        timer = undefined;
-      }
-    };
-    const render = () => {
-      follow.update(followButton(followState(store.state), Date.now()));
-      syncTimer();
-    };
+    const render = () => follow.update(followButton(followState(store.state)));
     const stopStore = store.subscribe(render);
-    syncTimer();
     agents.set(id, {
       detail,
       follow,
       watch,
       release: () => {
-        if (timer !== undefined) clearInterval(timer);
         stopStore();
         releaseStore?.();
         follow.remove();

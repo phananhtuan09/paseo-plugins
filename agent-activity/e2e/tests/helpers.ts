@@ -15,12 +15,12 @@ export async function openAgent(page: Page): Promise<void> {
 }
 
 export async function setLevel(page: Page, level: "Brief" | "Steps" | "Full"): Promise<void> {
-  const pill = page.getByText(/^Detail · /).first();
+  const pill = page.getByRole("button", { name: /^Detail level: / }).first();
   for (let i = 0; i < 3; i += 1) {
-    if ((await pill.innerText()).trim() === `Detail · ${level}`) return;
+    if ((await pill.innerText()).trim() === level) return;
     await pill.click();
   }
-  await expect(pill).toHaveText(`Detail · ${level}`);
+  await expect(pill).toHaveText(level);
 }
 
 export async function checkpoint(info: TestInfo, name: string, data: Record<string, unknown>): Promise<void> {
