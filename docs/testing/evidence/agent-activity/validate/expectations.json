@@ -1,0 +1,96 @@
+{
+ "schema": "validate-change/expectations@1",
+ "items": [
+  {
+   "id": "K1",
+   "statement": "While a command runs, the follow pill shows `Running <command>` and the timeline shows a Running chip; when done the chip shows `Ran` with a check",
+   "change": "added",
+   "source": "spec",
+   "sourceRef": "docs/plans/active/agent-activity.md",
+   "quote": "Prompt chạy `sleep 8 && echo done`: khi đang chạy, pill theo dõi hiện `Running sleep 8 && echo done` và chip Running hiện trong timeline; khi xong, chip hiện `Ran` kèm check.",
+   "confirmed": "source"
+  },
+  {
+   "id": "K2",
+   "statement": "Read and Edit steps use the same labels (Read, Edited) on every provider; Edited carries meta `+X −Y`",
+   "change": "added",
+   "source": "spec",
+   "sourceRef": "docs/plans/active/agent-activity.md",
+   "quote": "Prompt đọc và sửa một file: nhãn Read và Edited giống nhau trên mọi provider; Edited có meta `+X −Y`.",
+   "confirmed": "source"
+  },
+  {
+   "id": "K3",
+   "statement": "Switching Detail Brief → Steps → Full changes every step; tapping a step opens only that step's detail",
+   "change": "added",
+   "source": "spec",
+   "sourceRef": "docs/plans/active/agent-activity.md",
+   "quote": "Đổi Detail qua Brief → Steps → Full: mọi bước đổi theo; chạm một bước chỉ mở chi tiết của bước đó.",
+   "confirmed": "source"
+  },
+  {
+   "id": "K4",
+   "statement": "Disabling the plugin returns the timeline to default and removes the pills; enabling restores them",
+   "change": "added",
+   "source": "spec",
+   "sourceRef": "docs/plans/active/agent-activity.md",
+   "quote": "`paseo plugin disable agent-activity` trên daemon E2E thì timeline trở về mặc định và pill biến mất; `enable` thì quay lại.",
+   "confirmed": "source"
+  },
+  {
+   "id": "K5",
+   "statement": "A failed step is visible without opening, even at Brief, with `exit N` meta",
+   "change": "added",
+   "source": "spec",
+   "sourceRef": "docs/plans/active/agent-activity.md",
+   "quote": "Bước lỗi nhìn thấy được mà không cần mở, kể cả ở mức chi tiết gọn nhất.",
+   "confirmed": "source"
+  },
+  {
+   "id": "K6",
+   "statement": "Steps appear at their time position between agent answers; a segment is broken by any other item",
+   "change": "added",
+   "source": "spec",
+   "sourceRef": "docs/plans/active/agent-activity.md",
+   "quote": "Các bước hiện ở đúng vị trí thời gian của chúng, giữa các câu trả lời, không bị gom lên đầu turn.",
+   "confirmed": "source"
+  },
+  {
+   "id": "K7",
+   "statement": "At Steps and Full, run header `N steps · duration` and phase labels appear",
+   "change": "added",
+   "source": "spec",
+   "sourceRef": "docs/plans/active/agent-activity.md",
+   "quote": "Item đầu đoạn vẽ thêm đầu đoạn `N steps · thời lượng`, item đầu pha vẽ thêm nhãn pha",
+   "confirmed": "source"
+  },
+  {
+   "id": "K8",
+   "statement": "Agent answers, user messages and errors keep Paseo's default rendering",
+   "change": "unchanged",
+   "source": "spec",
+   "sourceRef": "docs/plans/active/agent-activity.md",
+   "quote": "Tin nhắn người dùng, câu trả lời của agent, lỗi, todo, compaction, notification và item của plugin khác giữ hiển thị mặc định.",
+   "confirmed": "source"
+  },
+  {
+   "id": "K9",
+   "statement": "The plugin installs with `paseo plugin install` and reaches `running` without error",
+   "change": "added",
+   "source": "spec",
+   "sourceRef": "docs/plans/active/agent-activity.md",
+   "quote": "Plugin cài được bằng `paseo plugin install` và lên trạng thái `running` không lỗi.",
+   "confirmed": "source"
+  },
+  {
+   "id": "K10",
+   "statement": "Screenshots in desktop and compact layouts render correctly (compact: Brief target truncated with an ellipsis)",
+   "change": "added",
+   "source": "spec",
+   "sourceRef": "docs/plans/active/agent-activity.md",
+   "quote": "Chụp ảnh desktop và compact, theme sáng và tối.",
+   "confirmed": "source"
+  }
+ ],
+ "conflicts": []
+}
