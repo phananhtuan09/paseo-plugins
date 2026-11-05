@@ -1,6 +1,6 @@
 # Agent Activity · Flow
 
-Status: Direction approved, not yet implemented.
+Status: Direction approved and spiked on Claude Code (2026-11-05), not yet implemented.
 The user approved the Flow direction on 2026-11-04, shown in `docs/mockups/agent-activity/flow.html`.
 The agent decided the remaining details, as the user asked ("cứ check, tự quyết định là được").
 
@@ -58,19 +58,20 @@ Các nguồn sau đã được kiểm tra ngày 2026-11-04.
 
 Phân loại theo `detail.type` do Paseo chuẩn hóa, không theo tên tool của provider.
 Tên tool chỉ dùng làm fallback cho `unknown` và `plain_text`.
+Khi tool đang chạy, `detail.type` ban đầu là `unknown` với `name` đã có (`Bash`, `Read`, `Edit`, `Agent`), nên `classify` dùng `name` để chọn đúng activity ngay từ đầu và không để bước nháy sang `tool`.
 Nhãn là động từ: thì hiện tại khi bước đang chạy, thì quá khứ khi đã xong, lỗi hoặc bị hủy.
 
 | Activity | Nhãn chạy / xong | Icon (Lucide) | Nguồn | Đích | Meta |
 | --- | --- | --- | --- | --- | --- |
-| `read` | Reading / Read | `FileText` | tool `read` | đường dẫn rút gọn | `N lines` |
-| `edit` | Editing / Edited | `FilePen` | tool `edit` | đường dẫn rút gọn | `+X −Y` đếm từ diff |
+| `read` | Reading / Read | `FileText` | tool `read` | đường dẫn rút gọn | `N lines`, chỉ khi đã xong |
+| `edit` | Editing / Edited | `FilePen` | tool `edit` | đường dẫn rút gọn | `+X −Y` đếm từ `oldString` và `newString` |
 | `write` | Writing / Wrote | `FilePlus` | tool `write` | đường dẫn rút gọn | `N lines` |
-| `run` | Running / Ran | `SquareTerminal` | tool `shell`, `worktree_setup` | dòng đầu của lệnh, cắt 80 ký tự | `exit N` khi khác 0 |
+| `run` | Running / Ran | `SquareTerminal` | tool `shell`, `worktree_setup` | dòng đầu của lệnh, cắt 80 ký tự | `exit N` khi lỗi, parse từ dòng `Exit code N` của `error.content` |
 | `search` | Searching / Searched | `Search` | tool `search` khác `web_search` | query, kèm `grep`/`glob` | `N files · N matches` |
-| `web` | Fetching / Fetched | `Globe` | tool `fetch`, `search` với `web_search` | host + path hoặc query | `HTTP code` / `N results` |
-| `delegate` | Delegating / Delegated | `Bot` | tool `sub_agent` | description | `N actions` |
+| `web` | Fetching / Fetched | `Globe` | tool `fetch`, `search` với `web_search` | host + path hoặc query | `HTTP code` cho `fetch`; không có meta cho `web_search` |
+| `delegate` | Delegating / Delegated | `Bot` | tool `sub_agent` | description | — |
 | `plan` | Planning / Planned | `ListChecks` | tool `plan` | dòng đầu của plan | — |
-| `tool` | Calling / Called | `Wrench` | tool `unknown`, `plain_text` | label hoặc tên tool; MCP `mcp__srv__fn` hiện `srv · fn` | — |
+| `tool` | Calling / Called | `Wrench` | tool `unknown`, `plain_text` (trừ `agent_message`, giữ mặc định) | label hoặc tên tool; MCP `mcp__srv__fn` hiện `srv · fn` | — |
 | `think` | Thinking / Thought | `Brain` | item `reasoning` | ở mức Brief không có; ở Steps là dòng đầu của suy nghĩ | — |
 
 Mỗi activity thuộc một pha, dùng để gom và gắn nhãn pha:
@@ -99,24 +100,26 @@ Có ba mức chi tiết, áp dụng cho mọi turn của mọi agent:
 
 | Mức | Một đoạn hiện thành |
 | --- | --- |
-| Brief (mặc định) | một dòng bọc nhiều hàng: các nhóm pha nối bằng `›`, mỗi nhóm có nhãn pha rồi các chip `icon + nhãn + đích + meta` |
-| Steps | đầu đoạn `N steps · thời lượng`, rồi nhãn pha mỗi khi pha đổi, rồi một hàng cho mỗi bước: icon, nhãn ở cột riêng, đích, meta, trạng thái |
+| Brief (mặc định) | mỗi bước là một chip `icon + nhãn + đích + meta` trên một hàng riêng; không gộp bước, không có nhãn pha |
+| Steps | đầu đoạn `N steps · thời lượng` ở bước đầu của đoạn, nhãn pha ở bước đầu của mỗi pha, rồi một hàng cho mỗi bước: icon, nhãn ở cột riêng, đích, meta, trạng thái |
 | Full | như Steps, thêm phần chi tiết của mọi bước được mở sẵn |
 
-- Ở mức Brief, các bước `read` hoặc `edit` liên tiếp đã xong được gộp thành một chip, ví dụ `Read 2 files`.
+Quyết định đã chốt ngày 2026-11-05 sau spike: Paseo thêm 16px dưới mỗi item của plugin kể cả item vẽ rỗng, nên không item nào được vẽ rỗng.
+Vì vậy Brief không gộp bước thành một dòng cho cả đoạn, và mọi mức đều vẽ theo từng item.
+
 - Chip đang chạy có viền và nền nhạt, kèm thời gian đã chạy và spinner.
 - Chip lỗi màu lỗi, có meta `exit N` và icon ✕; chip bị hủy có đích gạch ngang và icon ⊘.
-- Chạm vào dòng Brief mở riêng đoạn đó ở mức Steps; chạm đầu đoạn ở mức Steps hoặc Full thu đoạn đó về Brief.
-- Ở mức Steps, chạm một hàng mở hoặc đóng phần chi tiết của bước đó; ở mức Full, chạm để đóng.
+- Ở mọi mức, chạm một bước mở hoặc đóng phần chi tiết của riêng bước đó; ở Full, chi tiết mở sẵn và chạm để đóng.
+- Không có thao tác mở hoặc thu cả đoạn; muốn xem cả timeline thì đổi mức chi tiết.
 - Đổi mức chi tiết xóa mọi lựa chọn mở hoặc đóng riêng trước đó, để cả timeline đúng một mức.
-- Lựa chọn riêng theo đoạn và theo bước không được nhớ qua lần tải lại.
+- Lựa chọn riêng theo bước không được nhớ qua lần tải lại.
 
 Phần chi tiết của một bước:
 
 | Activity | Chi tiết |
 | --- | --- |
-| `run` | cwd, tên tool gốc, rồi output monospace; khi đang chạy hiện 12 dòng cuối, khi xong hiện 40 dòng đầu kèm `… N more lines`, rồi khối lỗi nếu có |
-| `edit` | đường dẫn đầy đủ, tên tool gốc, unified diff tô màu `+`/`−`, tối đa 60 dòng |
+| `run` | tên tool gốc, rồi output monospace; khi đang chạy hiện 12 dòng cuối, khi xong hiện 40 dòng đầu kèm `… N more lines`, rồi khối lỗi nếu có |
+| `edit` | đường dẫn đầy đủ, tên tool gốc, diff tô màu `+`/`−` do plugin tự dựng từ `oldString` và `newString` (không có hunk header và dòng ngữ cảnh), tối đa 60 dòng |
 | `write`, `read` | đường dẫn đầy đủ, tên tool gốc, 20 dòng đầu của nội dung |
 | `search` | danh sách file hoặc kết quả, tối đa 20 dòng |
 | `web` | URL hoặc query và tiêu đề kết quả |
@@ -140,7 +143,7 @@ Plugin thêm hai composer pill cho mỗi agent, nằm trước các pill có s�
 | Agent rảnh | icon check, `Done`, số bước, số bước lỗi nếu có, thời lượng turn |
 
 - Khi nhiều bước chạy song song, pill hiện bước bắt đầu sau cùng.
-- Chạm pill cuộn timeline tới bước đang chạy và nhấp nháy nó một lần, nếu Paseo cho plugin cuộn timeline; nếu không, chạm pill không làm gì.
+- Pill theo dõi chỉ báo trạng thái, không có hành vi chạm: SDK của plugin không có API cuộn timeline tới một item.
 
 **Pill Detail** hiện `Detail · Brief` (hoặc `Steps`, `Full`); chạm để chuyển Brief → Steps → Full → Brief.
 Mức chi tiết được nhớ qua lần tải lại nếu plugin có chỗ lưu cục bộ; nếu không, mỗi lần mở app bắt đầu từ Brief.
@@ -149,7 +152,7 @@ Mức chi tiết được nhớ qua lần tải lại nếu plugin có chỗ lư
 
 Vòng đời một bước:
 
-1. Bước bắt đầu: ở Brief, chip mới xuất hiện cuối dòng của đoạn với nhãn thì hiện tại; ở Steps, một hàng mới xuất hiện với nền nhạt; ở Full, hàng mở sẵn phần chi tiết và output tăng dần.
+1. Bước bắt đầu: ở Brief, một hàng chip mới xuất hiện với nhãn thì hiện tại; ở Steps, một hàng mới xuất hiện với nền nhạt; ở Full, hàng mở sẵn phần chi tiết và output tăng dần.
    Pill theo dõi chuyển sang bước này.
 2. Bước xong: nhãn chuyển sang thì quá khứ, meta cập nhật, spinner đổi thành trạng thái.
 3. Bước lỗi: chip hoặc hàng chuyển màu lỗi kèm `exit N`; nhãn pha của nhóm đó cũng chuyển màu lỗi.
@@ -165,10 +168,10 @@ Trường hợp biên:
 - Đích rỗng: đích là tên tool.
 - Reasoning rỗng hoặc chỉ có khoảng trắng: transformer trả `[]`.
 - `classify` gặp dữ liệu lạ: hàm bắt lỗi và trả `undefined`, nên item giữ hiển thị mặc định của Paseo.
-- Chưa đọc được timeline của agent (đang tải, lỗi kết nối, API không có): ở mức Brief, mỗi bước tự vẽ một dòng chip riêng thay vì gộp theo đoạn; mức Steps và Full không bị ảnh hưởng.
+- Chưa đọc được timeline của agent (đang tải, lỗi kết nối, API không có): Steps và Full bỏ đầu đoạn và nhãn pha, chỉ vẽ hàng của từng bước; Brief không bị ảnh hưởng.
 - Plugin bị tắt, gỡ hoặc lỗi: timeline vẽ lại bằng hiển thị mặc định và pill biến mất.
 - Theme sáng/tối và theme khác: mọi màu lấy từ `theme.colors`.
-- Compact layout: dòng Brief bọc nhiều hàng, cột nhãn ở Steps hẹp lại, pill theo dõi chiếm trọn một hàng của composer.
+- Compact layout: chip Brief cắt đích bằng dấu `…` thay vì xuống hàng, cột nhãn ở Steps hẹp lại, pill theo dõi chiếm trọn một hàng của composer.
 
 Hành vi không đổi:
 
@@ -193,7 +196,7 @@ export const activityStepSchema = z.object({
   status,
   target: z.string(), // ≤120 chars
   meta: z.string().optional(),
-  details: z.array(z.object({ label: z.string(), value: z.string() })).optional(), // cwd, full path, URL, raw tool name
+  details: z.array(z.object({ label: z.string(), value: z.string() })).optional(), // full path, URL, raw tool name
   body: body.optional(),
   errorText: z.string().optional(), // ≤2000 chars
   startedAt: z.string().optional(), // ISO, for elapsed time
@@ -216,11 +219,11 @@ agent-activity/
   client/classify.ts        # pure: item + phase -> step data or undefined
   client/classify.test.ts   # node --test
   client/activity-meta.ts   # activity -> verbs, Lucide icon, phase
-  client/segments.ts        # pure: ordered timeline items -> segments; first-item lookup
+  client/segments.ts        # pure: ordered timeline items -> run/phase starts for Steps and Full headers
   client/segments.test.ts   # node --test
-  client/agent-timeline.ts  # per-agent store: refetch + subscribe, shared by renderer and pills
+  client/agent-timeline.ts  # per-agent store: refetch + subscribe, shared by renderer (Steps/Full headers) and pills
   client/detail-level.ts    # shared store for Brief/Steps/Full
-  client/step-view.tsx      # renderer: Brief line, Steps rows, Full bodies
+  client/step-view.tsx      # renderer: Brief chip, Steps rows, Full bodies
   client/step-bodies.tsx    # detail bodies: mono, diff, stream
   client/composer-pills.tsx # follow pill and Detail pill
   e2e/                      # Playwright per project-runtime.md
@@ -235,19 +238,19 @@ agent-activity/
 
 Renderer duy nhất là `kind: "activity-step"`, `version: 1`, `schema: activityStepSchema`.
 
-Cách vẽ đoạn:
+Cách vẽ:
 
-- Mức Steps và Full: mỗi item tự vẽ hàng của mình; item đầu đoạn vẽ thêm đầu đoạn và mỗi item vẽ nhãn pha khi pha khác item trước.
-- Mức Brief: `agent-timeline.ts` giữ danh sách item theo thứ tự cho `agentId`; `segments.ts` cho biết item hiện tại có là item đầu đoạn không.
-  Item đầu đoạn vẽ cả dòng Brief của đoạn; các item còn lại của đoạn vẽ rỗng.
-- Nếu store chưa có dữ liệu, mỗi item vẽ dòng Brief của riêng nó.
+- Mọi mức: mỗi item tự vẽ đúng một hàng của mình và không item nào vẽ rỗng, vì Paseo thêm 16px dưới mỗi item của plugin.
+- Mức Brief: chip một dòng, không cần store.
+- Mức Steps và Full: `agent-timeline.ts` giữ danh sách item theo thứ tự cho `agentId`; `segments.ts` cho biết item hiện tại có là item đầu đoạn hoặc đầu pha không.
+  Item đầu đoạn vẽ thêm đầu đoạn `N steps · thời lượng`, item đầu pha vẽ thêm nhãn pha, cả hai nằm trong chính item đó.
+- Nếu store chưa có dữ liệu, Steps và Full chỉ vẽ hàng của bước.
 
 State trong renderer:
 
 ```ts
-const level = useDetailLevel();                       // "brief" | "steps" | "full"
-const segmentLevel = segmentOverride ?? level;        // per-segment tap, reset when level changes
-const bodyOpen = manual ?? segmentLevel === "full";   // per-step tap, reset when level changes
+const level = useDetailLevel();                // "brief" | "steps" | "full"
+const bodyOpen = manual ?? level === "full";   // per-step tap, reset when level changes
 ```
 
 ## Style
@@ -272,26 +275,77 @@ Hướng đã chốt là **Flow**, mockup tương tác ở `docs/mockups/agent-a
 - `npm run typecheck` trong `agent-activity/`.
 - `node --test` cho `classify.ts` và `segments.ts`, với fixture cho mỗi `detail.type`, mỗi status, reasoning rỗng, lệnh nhiều dòng, output quá dài, dữ liệu lạ, đoạn bị câu trả lời ngắt và tool song song.
 - Runtime E2E bằng Playwright trên daemon E2E cô lập theo `.claude/skills/runtime-e2e-test/references/project-runtime.md`, với mỗi provider có sẵn:
-  - Bước đầu tiên: đo xem item vẽ rỗng có còn chiếm khoảng cách giữa các item không; nếu có, ghi lại và chọn cách khác cho mức Brief trước khi làm tiếp.
   - Prompt chạy `sleep 8 && echo done`: khi đang chạy, pill theo dõi hiện `Running sleep 8 && echo done` và chip Running hiện trong timeline; khi xong, chip hiện `Ran` kèm check.
   - Prompt đọc và sửa một file: nhãn Read và Edited giống nhau trên mọi provider; Edited có meta `+X −Y`.
-  - Đổi Detail qua Brief → Steps → Full: mọi đoạn đổi theo; chạm một đoạn chỉ đổi đoạn đó.
+  - Đổi Detail qua Brief → Steps → Full: mọi bước đổi theo; chạm một bước chỉ mở chi tiết của bước đó.
   - `paseo plugin disable agent-activity` trên daemon E2E thì timeline trở về mặc định và pill biến mất; `enable` thì quay lại.
   - Chụp ảnh desktop và compact, theme sáng và tối.
 
+## Thứ tự làm
+
+Mỗi mốc có thể chạy được và kiểm được riêng.
+Đánh dấu `[x]` khi mốc đã làm xong và kiểm xong.
+
+- [ ] Mốc 1 · nền: scaffold `agent-activity/` bằng `paseo plugin init`, `shared/activity.ts`, `client/classify.ts` và `activity-meta.ts` với `classify.test.ts` dùng fixture từ `docs/observed/agent-activity.md`; typecheck và `node --test` đạt.
+- [ ] Mốc 2 · timeline: transformer, renderer ở ba mức, `detail-level.ts`, `step-bodies.tsx`; cài lên daemon E2E, kiểm bằng một turn Claude Code có đọc, sửa, chạy lệnh (cả lệnh lỗi), cả lúc đang stream.
+- [ ] Mốc 3 · pill và đầu đoạn: `agent-timeline.ts`, `segments.ts` (có test), đầu đoạn và nhãn pha ở Steps và Full, hai composer pill.
+- [ ] Mốc 4 · hoàn thiện: README, E2E Playwright (cần người dùng đồng ý cài Playwright trong `agent-activity/e2e/`), ảnh desktop và compact, theme sáng và tối, `docs/observed/agent-activity.md` cập nhật theo kết quả.
+
+Codex và OMP chưa kiểm được; làm mốc 1 đến 4 trên Claude Code trước, rồi bổ sung provider khác khi đã cài và đăng nhập.
+
 ## Giả định và chỗ chưa chắc
 
-- Item vẽ rỗng có thể vẫn chiếm khoảng cách giữa các item của timeline; mức Brief phụ thuộc vào điểm này và phải đo đầu tiên.
-- `timeline.subscribe()` và `refetch()` mới xác nhận qua type, chưa chạy thử trong plugin; `subscribe()` chỉ gửi sự kiện live nên store phải `refetch()` lúc đầu và sau khi kết nối lại.
-- Chưa biết plugin có cuộn được timeline tới một item không; nếu không, chạm pill theo dõi không làm gì.
-- Chưa biết plugin có chỗ lưu cục bộ cho mức chi tiết không.
+Kết quả spike ngày 2026-11-05 nằm ở `docs/observed/agent-activity.md`.
+
+Đã có kết quả:
+
+- **Item vẽ rỗng vẫn chiếm 16px mỗi item** (margin của wrapper do Paseo sở hữu, plugin không bỏ được).
+  Brief gộp đoạn bằng cách để các item sau của đoạn vẽ rỗng sẽ để lại một dải trống 16px × số item, nên không dùng được.
+  Đã chốt ngày 2026-11-05: Brief là một chip một hàng, không gộp (xem mục "Quyết định đã chốt" bên dưới và `docs/mockups/agent-activity/flow.html`).
+  Chưa thử bù khoảng cách bằng margin âm; nếu thử và chạy được thì mới cân nhắc lại.
+- `refetch()` chạy được trong renderer, và `subscribe()` nhận sự kiện live (`turn_started`, `timeline`, `turn_completed`) trong lúc turn đang chạy; `agents.list({ subscribe })` cũng phát hiện agent tạo sau.
+- Plugin không có API cuộn timeline tới một item, nên chạm pill theo dõi không cuộn; bỏ hành vi này khỏi tiêu chí chứ không coi là tùy chọn.
+- `localStorage` có trên web client và đọc ghi được; chưa kiểm trên native.
+  Lưu mức chi tiết bằng `localStorage` gói trong `client/web.ts` (chỉ chạy khi `Platform.OS === "web"`); native bắt đầu từ Brief.
+  `defineSettings` cũng lưu được nhưng ghi qua daemon, trái ràng buộc "không ghi gì vào daemon".
+- Tắt plugin thì timeline về mặc định ngay không cần tải lại; tiêu chí "gỡ hoặc tắt plugin" đã đạt.
+- Thay `tool_call` làm mất nhóm tool mặc định của Overview (ví dụ `Ran 1 command and read 1 file`); ghi làm giới hạn đã biết.
+
+Dữ liệu thật của Claude Code (3 turn, chi tiết ở `docs/observed/agent-activity.md`) lệch khỏi bảng ở "Quyết định 1" ở các điểm sau; bảng chi tiết của "Quyết định 2" và mockup đã sửa theo `cwd` và `unifiedDiff`, còn `classify` phải xử lý các điểm còn lại:
+
+- Một tool call đổi dạng khi đang chạy: ban đầu `detail.type` là `unknown` với `input` rỗng nhưng `name` đã có (`Bash`, `Read`, `Edit`), vài chục ms sau mới thành `shell`/`read`/`edit`.
+  `classify` phải dùng `name` làm fallback cho `unknown` đang chạy, nếu không bước `run` sẽ nháy `Calling` trước khi thành `Running`.
+- `Agent` đổi `name` thành `Task` và `detail` thành `sub_agent` giữa chừng; `actions` luôn rỗng nên meta `N actions` của `delegate` không có dữ liệu.
+- `shell` không có `exitCode` và `cwd`; mã thoát chỉ có trong `error.content` dạng `Exit code 2\n...` của bước `failed`.
+  Meta `exit N` phải được parse từ chuỗi đó, và dòng `cwd` trong chi tiết bước `run` bỏ.
+- `edit` không có `unifiedDiff`, chỉ có `oldString` và `newString` (đến dần từng trường khi đang chạy).
+  Meta `+X −Y` và khối diff phải tự tính từ hai chuỗi đó.
+- `read` chỉ có `content` khi đã xong, nên meta `N lines` chỉ hiện sau khi xong.
+- `search` kiểu `web_search` không có `webResults` hay số kết quả, nên meta `N results` không có dữ liệu.
+- Paseo phát thêm item `tool_call` tổng hợp kiểu `plain_text`: `agent_message` (tin nhắn do agent khác gửi) và `task_notification` (trùng với bước `Bash` đã có).
+  Bảng hiện coi `plain_text` là `tool` nên chúng sẽ hiện thành hai bước thừa; `classify` phải trả `undefined` cho `agent_message` và xử lý `task_notification` riêng.
+- `reasoning` chỉ có `text`, đến từng đoạn nhỏ; Haiku 5.5 không phát reasoning, Sonnet 5.5 với thinking cao thì có.
+
+Vẫn chưa chắc:
+
+- Mặc định Paseo có hiện `task_notification` không; nếu không, plugin nên trả `[]` cho item đó.
+- `TodoWrite`, `Grep`, `Glob`, `WebFetch` không tồn tại trong session Claude Code do Paseo 0.15.0 khởi tạo (cả Haiku và Sonnet), nên các nhánh `todo`, `fetch` và `search` thành công, cùng `plan`, `compaction`, `error`, `notification`, chưa quan sát được.
+  Fixture của các nhánh này phải viết tay từ type `ToolCallDetail`.
+- Codex và OMP cần được cài và đăng nhập để E2E đủ ba provider; mới quan sát Claude.
+- Tool đặc thù của OMP và tool MCP có thể rơi vào `unknown` và hiện là `tool`.
 - Phân pha theo loại tool là ước lượng: lệnh không phải test vẫn tính là Verify.
-- Tool đặc thù của OMP và tool MCP có thể rơi vào `unknown` và hiện là `tool`; ghi bảng ánh xạ quan sát được vào `docs/observed/agent-activity.md`.
-- Codex và OMP cần được cài và đăng nhập để E2E đủ ba provider; hiện mới chứng minh được Claude trên daemon E2E.
-- Thay `tool_call` có thể làm mất nhóm tool của Overview mode; nếu xảy ra, ghi lại làm giới hạn đã biết.
+
+## Quyết định đã chốt
+
+Ngày 2026-11-05 người dùng chọn **một chip một hàng** cho mức Brief, sau khi spike cho thấy item vẽ rỗng vẫn chiếm 16px.
+
+- Mất nhãn pha nối bằng `›` và việc gộp `Read 2 files` ở mức Brief; nhãn pha vẫn còn ở Steps và Full.
+- Hai hướng bị loại: transformer có trạng thái (trái yêu cầu tất định của Paseo, dễ vỡ khi tải lại) và chấp nhận dải trống 16px.
+- Mockup `docs/mockups/agent-activity/flow.html` đã cập nhật theo quyết định này, theo dữ liệu thật (không có `cwd`, `exit N` parse từ lỗi, diff tự dựng từ `oldString` và `newString`) và bỏ hành vi chạm pill để cuộn timeline.
 
 ## Ngoài phạm vi
 
 - Thay đổi hiển thị của câu trả lời, lỗi, todo và tin nhắn người dùng.
 - Syntax highlighting, tìm kiếm, đăng registry.
-- Nhớ lựa chọn mở riêng theo đoạn hoặc theo bước qua lần tải lại.
+- Nhớ lựa chọn mở riêng theo bước qua lần tải lại.
+- Cuộn timeline tới bước đang chạy từ pill (SDK không hỗ trợ).
