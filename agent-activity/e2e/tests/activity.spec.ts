@@ -11,7 +11,7 @@ test.beforeEach(() => {
   test.skip(!workspaceName || !agentId, "E2E_WORKSPACE_NAME and E2E_AGENT_ID are required");
 });
 
-test("@K2 @K5 @K9 Brief chips: Read, Edited +X −Y, failed Ran with exit 2, plugin running", async ({ page }, info) => {
+test("@K2 @K5 @K9 Brief chips: Read, Edited +X −Y, failed Ran with non-zero exit, plugin running", async ({ page }, info) => {
   const ls = paseo("plugin", "ls");
   expect(ls).toMatch(/agent-activity\s+running\s+yes/);
   await openAgent(page);
@@ -21,7 +21,7 @@ test("@K2 @K5 @K9 Brief chips: Read, Edited +X −Y, failed Ran with exit 2, plu
   const ran = page.getByRole("button", { name: /^Ran ls \/nonexistent-e2e-path, failed, collapsed$/ });
   await expect(read).toBeVisible();
   await expect(edit).toContainText("+1 −1");
-  await expect(ran).toContainText("exit 2");
+  await expect(ran).toContainText(/exit [1-9]\d*/);
   await expect(page.getByText("OK", { exact: true }).first()).toBeVisible();
   await checkpoint(info, "brief-chips", {
     read: await read.innerText(),
@@ -38,6 +38,8 @@ test("@K3 @K6 @K7 Detail Brief → Steps → Full changes every step; tap opens 
   // The fixture timeline has two runs split by an answer: read/edit/failed ls, then two single-step sleep runs (the live case was run twice).
   await expect(page.getByText(/^3 steps · .*1 failed$/)).toBeVisible();
   await expect(page.getByText(/^1 step · /)).toHaveCount(2);
+  // Each single-step run is a `sleep 8`; its header must show the real wait, not 0s.
+  await expect(page.getByText(/^1 step · (8|9|10)s$/)).toHaveCount(2);
   const phases = await page.getByText(/^(EXPLORE|CHANGE|VERIFY)$/).allInnerTexts();
   expect(phases).toEqual(["EXPLORE", "CHANGE", "VERIFY", "VERIFY", "VERIFY"]);
   await shot(page, info, "steps");

@@ -5,6 +5,8 @@ import type { Activity, StepStatus } from "../shared/activity.ts";
 export interface SegmentRow {
   key: string;
   time: number;
+  /** Time of the entry right before this row, hidden entries included; a finished step's own time is when it ended. */
+  before?: number;
   step?: { activity: Activity; status: StepStatus };
 }
 
@@ -54,8 +56,9 @@ function markRun(run: readonly SegmentRow[], next: SegmentRow | undefined, resul
     run: {
       steps: run.length,
       failed: steps.filter((step) => step.status === "failed").length,
-      startMs: run[0].time,
-      // Rows carry start times, so the row after the run is when its last step ended.
+      // A finished tool call is stamped when it ended, so the run starts when the entry before it did.
+      startMs: run[0].before ?? run[0].time,
+      // The row after the run starts once its last step ended.
       endMs: next?.time ?? run[run.length - 1].time,
       running: steps.some((step) => step.status === "running"),
     },

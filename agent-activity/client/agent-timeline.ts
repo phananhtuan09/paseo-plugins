@@ -126,8 +126,11 @@ interface RawEntry {
 
 function buildRows(entries: readonly RawEntry[]): TimelineRow[] {
   const rows: TimelineRow[] = [];
+  let before: number | undefined;
   for (const entry of entries) {
     const time = Date.parse(entry.timestamp);
+    const previous = before;
+    before = time;
     const item = entry.item as never as { type: string; status?: string };
     let result: ActivityStep | null | undefined;
     if (item.type === "tool_call") {
@@ -138,7 +141,7 @@ function buildRows(entries: readonly RawEntry[]): TimelineRow[] {
     }
     if (result === null) continue; // hidden rows render nothing
     if (result) {
-      rows.push({ key: stepKey(result, entry.timestamp), time, kind: "step", step: result, turnId: entry.turnId });
+      rows.push({ key: stepKey(result, entry.timestamp), time, kind: "step", step: result, before: previous, turnId: entry.turnId });
     } else {
       const kind = item.type === "user_message" ? "user" : item.type === "assistant_message" ? "assistant" : "other";
       rows.push({ key: `${kind}:${time}:${rows.length}`, time, kind, turnId: entry.turnId });

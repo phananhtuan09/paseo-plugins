@@ -61,3 +61,9 @@ test("a run lasts until the row after it starts, so a single step has a duration
   assert.equal(info.get("a")?.run?.endMs, 9000);
   assert.equal(info.get("a")?.run?.startMs, 1000);
 });
+
+test("a run starts when the entry before it did, because a finished step is stamped at its end", () => {
+  const info = segmentRows([{ ...step("a", "run", "done", 30_000), before: 21_000 }, { key: "msg", time: 31_000 }]);
+  assert.equal(info.get("a")?.run?.startMs, 21_000);
+  assert.equal(info.get("a")?.run?.endMs, 31_000);
+});
