@@ -212,3 +212,16 @@ test("file content gets a highlight language from the file extension only", () =
   const text = step(tool({ name: "Read", detail: { type: "read", filePath: "/a/notes.txt", content: "hello" } }));
   assert.equal(text.body?.lang, undefined);
 });
+
+// Codex fixtures captured on Paseo 0.15.2 during the runtime probe.
+test("Codex unified diff renders changed lines and counts without file headers", () => {
+  const result = step(tool({ name: "apply_patch", detail: { type: "edit", filePath: "notes.ts", unifiedDiff: "--- a/notes.ts\n+++ b/notes.ts\n@@ -1 +1 @@\n-foo\n+bar\n" } }));
+  assert.equal(result.meta, "+1 −1");
+  assert.equal(result.body?.kind, "diff");
+  assert.match(result.body?.text ?? "", /-foo\n\+bar/);
+});
+
+test("Codex failed shell uses structured exitCode before generic error text", () => {
+  const result = step(tool({ status: "failed", name: "shell", error: { message: "Tool call failed" }, detail: { type: "shell", command: "ls /missing", exitCode: 1, output: "missing" } }));
+  assert.equal(result.meta, "exit 1");
+});

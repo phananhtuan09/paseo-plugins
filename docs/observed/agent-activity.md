@@ -57,11 +57,23 @@ Scope: Paseo 0.15.0 timeline transformer, renderer, composer pill and storage be
 - `TodoWrite`, `Grep`, `Glob` and `WebFetch` do not exist in the Claude Code session that Paseo 0.15.0 started, for both Haiku 5.5 and Sonnet 5.5. `ToolSearch` returned `No matching deferred tools found`, and the agents substituted `Bash` or a `web-fetch` sub-agent. Evidence: run 2 `msgid=9`, `36`, `68` and the agents' final messages
 - No `todo`, `plan`, `compaction`, `error`, `notification`, `fetch` or `worktree_setup` item was observed. Evidence: run 2 logs
 
+### Codex on Paseo 0.15.2
+
+- Codex `apply_patch` returns an edit detail with `filePath` and `unifiedDiff`, without `oldString` and `newString`.
+  The classifier now supports this shape.
+  Evidence: `agent-activity/client/classify.test.ts`, test `Codex unified diff renders changed lines and counts without file headers`.
+- Failed Codex shell calls expose `detail.exitCode`, while `error.message` can be only `Tool call failed`.
+  Evidence: `agent-activity/client/classify.test.ts`, test `Codex failed shell uses structured exitCode before generic error text`.
+- Stopping a Codex turn can leave a running tool entry in the daemon timeline; the shell can complete later as a second record with the same call ID and no turn ID.
+  The plugin reconciles these into one row and freezes unresolved steps when the turn is no longer active.
+  It does not terminate provider-owned shell processes.
+  Evidence: runtime probes on 2026-11-05, agent `0956eb72-9042-4b0d-b0a1-3cd2cfe419fb`; regression cases in `agent-activity/client/timeline-rows.test.ts`.
+
 ## Open questions
 
 - Whether Paseo's default rendering shows or hides `task_notification` items, which decides whether the plugin should hide them.
 - Whether `Grep`, `Glob`, `WebFetch` and `TodoWrite` exist in a normal Claude Code session outside Paseo's E2E setup and map to `search`, `fetch` and `todo`.
-- Whether Codex and OMP tool calls map to the same `detail.type` values as Claude Code.
+- Whether OMP tool calls map to the same `detail.type` values as Claude Code.
 - Whether `localStorage` exists on native clients.
 
 ## References

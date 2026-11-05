@@ -105,6 +105,20 @@ function buildToolStep(item: ToolCallItem, _phase: Phase): ClassifyResult {
       if (typeof oldString === "string" && typeof newString === "string") {
         meta = `+${countLines(newString)} −${countLines(oldString)}`;
         body = diffBody(oldString, newString);
+      } else if (typeof detail.unifiedDiff === "string" && detail.unifiedDiff.trim() !== "") {
+        const lines = detail.unifiedDiff.replace(/\n$/, "").split("\n");
+        let added = 0;
+        let removed = 0;
+        let inHunk = false;
+        for (const line of lines) {
+          if (line.startsWith("@@")) inHunk = true;
+          else if (line.startsWith("diff --git ")) inHunk = false;
+          else if (inHunk && line.startsWith("+")) added += 1;
+          else if (inHunk && line.startsWith("-")) removed += 1;
+        }
+        meta = `+${added} −${removed}`;
+        const kept = lines.slice(0, DIFF_MAX_LINES);
+        body = { kind: "diff", text: clip(kept.join("\n"), FIELD_MAX), ...(lines.length > kept.length ? { hiddenLines: lines.length - kept.length } : {}) };
       }
       break;
     }
@@ -151,7 +165,9 @@ function buildToolStep(item: ToolCallItem, _phase: Phase): ClassifyResult {
   if (status === "failed") {
     const errorText = errorTextOf(item.error);
     if (errorText) step.errorText = errorText;
-    meta = exitMeta(errorText) ?? "failed";
+    meta = detail.type === "shell" && typeof detail.exitCode === "number"
+      ? `exit ${detail.exitCode}`
+      : exitMeta(errorText) ?? "failed";
   }
 
   step.target = target === "" ? item.name : target;

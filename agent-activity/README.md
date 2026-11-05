@@ -68,7 +68,13 @@ Pass the agent id as `E2E_AGENT_ID` and the directory name as `E2E_WORKSPACE_NAM
 
 - Reasoning steps appear only for models that emit reasoning; they were not seen in Claude Haiku 5.5 runs.
 - The run duration is approximate: the timeline has no start time for a finished tool call, so a run starts at the entry before it.
-- Only Claude Code agents were checked at runtime; Codex and OMP were not.
+- Claude Code and Codex agents were checked at runtime; OMP was not.
+- Codex edits use `unifiedDiff`; the plugin shows that diff and counts its added and removed lines.
+  Failed shell calls use the structured exit code when available.
+- After a turn stops, unresolved tool rows display a stopped state and elapsed timers freeze.
+  Duplicate records for one call are shown once, using the terminal result when available.
+  This changes activity display only: Paseo/Codex may let the shell process finish after Stop, and a late result then replaces the stopped row.
+- Brief, Steps and Full share the latest 200 timeline entries for status reconciliation and headers.
 - The phase and code colors are fixed blue, amber and violet with a dark and a light variant, chosen from the theme's brightness; they do not follow custom theme accents.
 
 ## Troubleshoot

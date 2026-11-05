@@ -57,11 +57,13 @@ function followButton(state: FollowState, now: number) {
     case "done": {
       const parts = [`${state.steps} step${state.steps === 1 ? "" : "s"}`];
       if (state.failed > 0) parts.push(`${state.failed} failed`);
+      if (state.canceled > 0) parts.push(`${state.canceled} stopped`);
+      const label = state.canceled > 0 ? "Stopped" : "Done";
       parts.push(formatDuration(state.durationMs));
       return {
-        title: `Done · ${parts.join(" · ")}`,
+        title: `${label} · ${parts.join(" · ")}`,
         icon: "Check",
-        label: `Done · ${parts.join(" · ")}`,
+        label: `${label} · ${parts.join(" · ")}`,
         behavior: noop,
         visible: true,
       };

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import type { ActivityStep, StepStatus } from "../shared/activity.ts";
 import { ACTIVITY_META, activityLabel, type Phase } from "./activity-meta.ts";
-import { stepKey, useSegmentInfo } from "./agent-timeline.ts";
+import { stepKey, useTimelineRow } from "./agent-timeline.ts";
 import { useDetailLevel } from "./detail-level.ts";
 import { StepBodies } from "./step-bodies.tsx";
 import { formatDuration } from "./format.ts";
@@ -28,14 +28,15 @@ function phaseColor(phase: Phase, colors: Props["theme"]["colors"]): string {
 }
 
 export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
-  const step = item.data;
+  const { row, info } = useTimelineRow(agentId, stepKey(item.data, timestamp));
+  const step = row?.step ?? item.data;
   const level = useDetailLevel();
   const [manual, setManual] = useState<boolean | null>(null);
   // Changing the level drops every per-step tap so the whole timeline shows one level.
   useEffect(() => setManual(null), [level]);
   const bodyOpen = manual ?? level === "full";
   const elapsed = useElapsed(step.status === "running", timestamp);
-  const info = useSegmentInfo(agentId, stepKey(step, timestamp), level !== "brief");
+
   const { colors } = theme;
   const meta = ACTIVITY_META[step.activity];
   const label = activityLabel(step.activity, step.status);
@@ -146,9 +147,11 @@ export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
       </Pressable>
     );
 
+  // Multiple source records can represent one Codex call after an interrupted turn.
+  if (row && row.time !== timestamp.getTime()) return null;
   return (
     <View>
-      {info ? <Headers info={info} theme={theme} /> : null}
+      {info && level !== "brief" ? <Headers info={info} theme={theme} /> : null}
       {header}
       {bodyOpen && hasBody ? (
         <View style={styles.body}>
