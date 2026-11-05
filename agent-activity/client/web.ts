@@ -1,12 +1,25 @@
-import { Linking, Platform } from "react-native";
+import { Platform } from "react-native";
 
 // This plugin typechecks without the DOM library. Declare only what this module uses.
-declare const window: { open(url: string, target: string, features: string): unknown };
+declare const localStorage: {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+};
 
-export async function openExternal(url: string): Promise<void> {
-  if (Platform.OS === "web") {
-    window.open(url, "_blank", "noopener,noreferrer");
-    return;
+export function readStored(key: string): string | null {
+  if (Platform.OS !== "web") return null;
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
   }
-  await Linking.openURL(url);
+}
+
+export function writeStored(key: string, value: string): void {
+  if (Platform.OS !== "web") return;
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Storage can be unavailable or full; the level then resets on the next load.
+  }
 }

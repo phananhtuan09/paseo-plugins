@@ -286,8 +286,8 @@ Mỗi mốc có thể chạy được và kiểm được riêng.
 Đánh dấu `[x]` khi mốc đã làm xong và kiểm xong.
 
 - [x] Mốc 1 · nền: scaffold `agent-activity/` bằng `paseo plugin init`, `shared/activity.ts`, `client/classify.ts` và `activity-meta.ts` với `classify.test.ts` dùng fixture từ `docs/observed/agent-activity.md`; typecheck và `node --test` đạt.
-- [ ] Mốc 2 · timeline: transformer, renderer ở ba mức, `detail-level.ts`, `step-bodies.tsx`; cài lên daemon E2E, kiểm bằng một turn Claude Code có đọc, sửa, chạy lệnh (cả lệnh lỗi), cả lúc đang stream.
-- [ ] Mốc 3 · pill và đầu đoạn: `agent-timeline.ts`, `segments.ts` (có test), đầu đoạn và nhãn pha ở Steps và Full, hai composer pill.
+- [x] Mốc 2 · timeline: transformer, renderer ở ba mức, `detail-level.ts`, `step-bodies.tsx`; cài lên daemon E2E, kiểm bằng một turn Claude Code có đọc, sửa, chạy lệnh (cả lệnh lỗi), cả lúc đang stream.
+- [ ] Mốc 3 · pill và đầu đoạn (pill Detail đã làm ở mốc 2): `agent-timeline.ts`, `segments.ts` (có test), đầu đoạn và nhãn pha ở Steps và Full, hai composer pill.
 - [ ] Mốc 4 · hoàn thiện: README, E2E Playwright (cần người dùng đồng ý cài Playwright trong `agent-activity/e2e/`), ảnh desktop và compact, theme sáng và tối, `docs/observed/agent-activity.md` cập nhật theo kết quả.
 
 Codex và OMP chưa kiểm được; làm mốc 1 đến 4 trên Claude Code trước, rồi bổ sung provider khác khi đã cài và đăng nhập.
