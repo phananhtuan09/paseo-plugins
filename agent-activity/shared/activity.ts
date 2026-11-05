@@ -23,6 +23,8 @@ export const stepBodySchema = z.object({
 });
 
 export const activityStepSchema = z.object({
+  /** Tool call id; reasoning has none and is keyed by its timestamp. */
+  callId: z.string().optional(),
   activity: activitySchema,
   status: statusSchema,
   target: z.string(),

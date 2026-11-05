@@ -4,8 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import type { ActivityStep, StepStatus } from "../shared/activity.ts";
 import { ACTIVITY_META, activityLabel } from "./activity-meta.ts";
+import { stepKey, useSegmentInfo } from "./agent-timeline.ts";
 import { useDetailLevel } from "./detail-level.ts";
 import { StepBodies } from "./step-bodies.tsx";
+import { formatDuration } from "./format.ts";
+import type { SegmentInfo } from "./segments.ts";
 
 type Props = PluginTimelineItemProps<ActivityStep>;
 
@@ -17,7 +20,7 @@ const STATUS_ICON: Record<StepStatus, string> = {
 };
 
 // Paseo adds 16px under every plugin item itself, so a step never adds its own bottom margin.
-export function StepView({ item, theme, layout, timestamp }: Props) {
+export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
   const step = item.data;
   const level = useDetailLevel();
   const [manual, setManual] = useState<boolean | null>(null);
@@ -25,6 +28,7 @@ export function StepView({ item, theme, layout, timestamp }: Props) {
   useEffect(() => setManual(null), [level]);
   const bodyOpen = manual ?? level === "full";
   const elapsed = useElapsed(step.status === "running", timestamp);
+  const info = useSegmentInfo(agentId, stepKey(step, timestamp), level !== "brief");
   const { colors } = theme;
   const meta = ACTIVITY_META[step.activity];
   const label = activityLabel(step.activity, step.status);
@@ -129,6 +133,7 @@ export function StepView({ item, theme, layout, timestamp }: Props) {
 
   return (
     <View>
+      {info ? <Headers info={info} theme={theme} /> : null}
       {header}
       {bodyOpen && hasBody ? (
         <View style={styles.body}>
@@ -139,15 +144,56 @@ export function StepView({ item, theme, layout, timestamp }: Props) {
   );
 }
 
-function useElapsed(running: boolean, timestamp: Date): string | undefined {
+function Headers({ info, theme }: { info: SegmentInfo; theme: Props["theme"] }) {
+  const { colors } = theme;
+  const now = useNow(Boolean(info.run?.running));
+  return (
+    <View>
+      {info.run ? (
+        <Text style={{ color: colors.foregroundMuted, fontSize: 12, fontWeight: "600", paddingBottom: 6 }}>
+          {[
+            `${info.run.steps} step${info.run.steps === 1 ? "" : "s"}`,
+            formatDuration((info.run.running ? now : info.run.endMs) - info.run.startMs),
+            info.run.failed > 0 ? `${info.run.failed} failed` : undefined,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </Text>
+      ) : null}
+      {info.phase ? (
+        <Text
+          style={{
+            color: info.phase.failed
+              ? colors.statusDanger
+              : info.phase.running
+                ? colors.foreground
+                : colors.foregroundMuted,
+            fontSize: 11,
+            fontWeight: "700",
+            letterSpacing: 0.6,
+            paddingBottom: 2,
+            paddingTop: info.run ? 0 : 6,
+          }}
+        >
+          {info.phase.phase.toUpperCase()}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function useNow(active: boolean): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (!running) return;
+    if (!active) return;
     setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, [running]);
-  if (!running) return undefined;
-  const seconds = Math.max(0, Math.floor((now - timestamp.getTime()) / 1000));
-  return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+  }, [active]);
+  return now;
+}
+
+function useElapsed(running: boolean, timestamp: Date): string | undefined {
+  const now = useNow(running);
+  return running ? formatDuration(now - timestamp.getTime()) : undefined;
 }

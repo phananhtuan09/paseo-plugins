@@ -63,7 +63,7 @@ function buildToolStep(item: ToolCallItem, _phase: Phase): ClassifyResult {
 
   const activity = activityOf(item);
   const status = statusOf(item);
-  const step: ActivityStep = { activity, status, target: "" };
+  const step: ActivityStep = { callId: item.callId, activity, status, target: "" };
   const details: Array<{ label: string; value: string }> = [];
   const addDetail = (label: string, value: string | undefined) => {
     if (value) details.push({ label, value: clip(value, TARGET_MAX * 4) });

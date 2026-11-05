@@ -1,4 +1,6 @@
 import type { PluginButtonRegistration, PluginClientContext } from "@getpaseo/plugin/client";
+import { ACTIVITY_META, activityLabel } from "./activity-meta.ts";
+import { type FollowState, followState, forgetAgentTimeline, getAgentTimeline } from "./agent-timeline.ts";
 import {
   type DetailLevel,
   getDetailLevel,
@@ -6,8 +8,10 @@ import {
   setDetailLevel,
   subscribeDetailLevel,
 } from "./detail-level.ts";
+import { formatDuration } from "./format.ts";
 
 const LABELS: Record<DetailLevel, string> = { brief: "Brief", steps: "Steps", full: "Full" };
+const TARGET_MAX = 36;
 
 function detailButton() {
   const level = getDetailLevel();
@@ -24,30 +28,115 @@ function detailButton() {
   };
 }
 
-/** Adds the Detail pill to every agent, including agents created later. Returns cleanup. */
+const noop = { kind: "action" as const, onPress() {} };
+
+function followButton(state: FollowState, now: number) {
+  switch (state.kind) {
+    case "step": {
+      const { step } = state;
+      const target = step.target.length > TARGET_MAX ? `${step.target.slice(0, TARGET_MAX)}…` : step.target;
+      const text = `${ACTIVITY_META[step.activity].phase} · ${activityLabel(step.activity, "running")} ${target}`;
+      return {
+        title: `${text} (${formatDuration(now - state.startMs)})`,
+        icon: ACTIVITY_META[step.activity].icon,
+        label: `${text} · ${formatDuration(now - state.startMs)}`,
+        behavior: noop,
+        visible: true,
+      };
+    }
+    case "answering":
+      return {
+        title: "Answering",
+        icon: "MessageSquare",
+        label: `Answering · ${formatDuration(now - state.startMs)}`,
+        behavior: noop,
+        visible: true,
+      };
+    case "working":
+      return { title: "Working", icon: "Loader", label: "Working", behavior: noop, visible: true };
+    case "done": {
+      const parts = [`${state.steps} step${state.steps === 1 ? "" : "s"}`];
+      if (state.failed > 0) parts.push(`${state.failed} failed`);
+      parts.push(formatDuration(state.durationMs));
+      return {
+        title: `Done · ${parts.join(" · ")}`,
+        icon: "Check",
+        label: `Done · ${parts.join(" · ")}`,
+        behavior: noop,
+        visible: true,
+      };
+    }
+    case "hidden":
+      return { title: "Agent activity", icon: "Activity", label: "Activity", behavior: noop, visible: false };
+  }
+}
+
+interface AgentPills {
+  detail: PluginButtonRegistration;
+  follow: PluginButtonRegistration;
+  /** Starts watching the agent's timeline; idle agents are not watched until they run. */
+  watch: () => void;
+  release: () => void;
+}
+
+/** Adds the follow and Detail pills to every agent, including agents created later. Returns cleanup. */
 export function contributeComposerPills(client: PluginClientContext): () => void {
-  const pills = new Map<string, PluginButtonRegistration>();
+  const agents = new Map<string, AgentPills>();
   const lifetime = new AbortController();
 
-  const register = (agent: { id: string; workspaceId?: string | null }) => {
-    if (lifetime.signal.aborted || !agent.workspaceId || pills.has(agent.id)) return;
-    pills.set(
-      agent.id,
-      client.addComposerPill({
-        id: "detail",
-        workspaceId: agent.workspaceId,
-        agentId: agent.id,
-        button: detailButton(),
-      }),
-    );
+  const register = (agent: { id: string; workspaceId?: string | null; status?: string }) => {
+    if (lifetime.signal.aborted || !agent.workspaceId) return;
+    const running = agent.status === "running";
+    const existing = agents.get(agent.id);
+    if (existing) {
+      if (running) existing.watch();
+      getAgentTimeline(agent.id).setRunning(running);
+      return;
+    }
+    const { id, workspaceId } = { id: agent.id, workspaceId: agent.workspaceId };
+    const store = getAgentTimeline(id);
+    let releaseStore: (() => void) | undefined;
+    const watch = () => {
+      releaseStore ??= store.acquire(client.paseo);
+    };
+    if (running) watch();
+    store.setRunning(running);
+    const follow = client.addComposerPill({
+      id: "follow",
+      workspaceId,
+      agentId: id,
+      button: followButton(followState(store.state), Date.now()),
+    });
+    const detail = client.addComposerPill({ id: "detail", workspaceId, agentId: id, button: detailButton() });
+    const render = () => follow.update(followButton(followState(store.state), Date.now()));
+    const stopStore = store.subscribe(render);
+    // Elapsed time only changes while something runs, so tick only then.
+    const timer = setInterval(() => {
+      const state = followState(store.state);
+      if (state.kind === "step" || state.kind === "answering") render();
+    }, 1000);
+    agents.set(id, {
+      detail,
+      follow,
+      watch,
+      release: () => {
+        clearInterval(timer);
+        stopStore();
+        releaseStore?.();
+        follow.remove();
+        detail.remove();
+        forgetAgentTimeline(id);
+      },
+    });
   };
+
   const removeAll = () => {
-    for (const pill of pills.values()) pill.remove();
-    pills.clear();
+    for (const pills of agents.values()) pills.release();
+    agents.clear();
   };
 
   const stopLevel = subscribeDetailLevel(() => {
-    for (const pill of pills.values()) pill.update(detailButton());
+    for (const pills of agents.values()) pills.detail.update(detailButton());
   });
 
   void client.paseo.agents
@@ -62,8 +151,8 @@ export function contributeComposerPills(client: PluginClientContext): () => void
           if (message.type !== "agent_update") return;
           const update = message.payload;
           if (update.kind === "upsert") return register(update.agent);
-          pills.get(update.agentId)?.remove();
-          pills.delete(update.agentId);
+          agents.get(update.agentId)?.release();
+          agents.delete(update.agentId);
         },
       });
       return undefined;

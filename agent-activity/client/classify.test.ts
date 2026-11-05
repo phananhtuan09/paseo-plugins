@@ -193,3 +193,8 @@ test("empty or whitespace reasoning is removed", () => {
   assert.equal(classifyReasoning({ type: "reasoning", text: "  \n " }, "complete"), null);
   assert.equal(classifyReasoning({ type: "reasoning", text: "" }, "streaming"), null);
 });
+
+test("tool steps carry the call id and reasoning does not", () => {
+  assert.equal(step(tool({ callId: "toolu_1", detail: { type: "shell", command: "x" } })).callId, "toolu_1");
+  assert.equal(classifyReasoning({ type: "reasoning", text: "hm" }, "complete")?.callId, undefined);
+});
