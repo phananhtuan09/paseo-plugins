@@ -35,13 +35,18 @@ test("@K2 @K5 @K9 Brief chips: Read, Edited +X −Y, failed Ran with non-zero ex
 test("@K3 @K6 @K7 Detail Brief → Steps → Full changes every step; tap opens one step", async ({ page }, info) => {
   await openAgent(page);
   await setLevel(page, "Steps");
-  // The fixture timeline has two runs split by an answer: read/edit/failed ls, then two single-step sleep runs (the live case was run twice).
-  await expect(page.getByText(/^3 steps · .*1 failed$/)).toBeVisible();
-  await expect(page.getByText(/^1 step · /)).toHaveCount(2);
-  // Each single-step run is a `sleep 8`; its header must show the real wait, not 0s.
-  await expect(page.getByText(/^1 step · (8|9|10)s$/)).toHaveCount(2);
+  // The fixture timeline has a read/edit/failed ls run, then single-step sleep runs split by answers.
+  // The model may add a step, and the live case adds a sleep run, so check the structure, not exact counts.
+  await expect(page.getByText(/^\d+ steps · .*1 failed$/)).toBeVisible();
+  const singles = page.getByText(/^1 step · /);
+  await expect.poll(() => singles.count()).toBeGreaterThanOrEqual(2);
+  // Each single-step run is a `sleep 8`; its header must show at least that wait, not 0s.
+  for (const text of await singles.allInnerTexts()) expect(text).toMatch(/^1 step · (\d+m \d+s|([89]|\d{2})s)$/);
   const phases = await page.getByText(/^(EXPLORE|CHANGE|VERIFY)$/).allInnerTexts();
-  expect(phases).toEqual(["EXPLORE", "CHANGE", "VERIFY", "VERIFY", "VERIFY"]);
+  expect(phases[0]).toBe("EXPLORE");
+  expect(phases).toContain("CHANGE");
+  expect(phases.indexOf("CHANGE")).toBeLessThan(phases.lastIndexOf("VERIFY"));
+  expect(phases.filter((phase) => phase === "VERIFY").length).toBeGreaterThanOrEqual(3);
   await shot(page, info, "steps");
 
   // Tapping one step opens only that step's detail.
@@ -80,7 +85,7 @@ test("@K1 live: sleep 8 && echo done shows Running pill and chip, then Ran and D
     await expect(runningChip).toBeVisible();
     const pillText = await pill.innerText();
     await shot(page, info, "live-running");
-    const ranChip = page.getByRole("button", { name: /^Ran sleep 8 && echo done, done, collapsed$/ });
+    const ranChip = page.getByRole("button", { name: /^Ran sleep 8 && echo done, done, collapsed$/ }).last();
     await expect(ranChip).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText(/^Done · \d+ steps?/).first()).toBeVisible({ timeout: 20_000 });
     await checkpoint(info, "live", { pillText, doneChip: await ranChip.innerText() });
