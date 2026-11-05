@@ -1,5 +1,6 @@
 import type { AgentTimelineItem } from "@getpaseo/protocol/agent-types";
 import type { Activity, ActivityStep, StepBody, StepStatus } from "../shared/activity.ts";
+import { langForPath } from "./highlight.ts";
 
 type ToolCallItem = Extract<AgentTimelineItem, { type: "tool_call" }>;
 type ReasoningItem = Extract<AgentTimelineItem, { type: "reasoning" }>;
@@ -71,10 +72,12 @@ function buildToolStep(item: ToolCallItem, _phase: Phase): ClassifyResult {
   let meta: string | undefined;
   let body: StepBody | undefined;
   let target = "";
+  let command: string | undefined;
 
   switch (detail.type) {
     case "shell":
       target = commandTarget(detail.command);
+      command = clip(detail.command, FIELD_MAX);
       body = outputBody(detail.output, status);
       break;
     case "worktree_setup":
@@ -87,13 +90,13 @@ function buildToolStep(item: ToolCallItem, _phase: Phase): ClassifyResult {
       if (status === "done" && typeof detail.content === "string") {
         meta = plural(countLines(detail.content), "line");
       }
-      body = headBody(detail.content, PREVIEW_LINES);
+      body = withLang(headBody(detail.content, PREVIEW_LINES), detail.filePath);
       break;
     case "write":
       target = shortPath(detail.filePath);
       addDetail("Path", detail.filePath);
       if (typeof detail.content === "string") meta = plural(countLines(detail.content), "line");
-      body = headBody(detail.content, PREVIEW_LINES);
+      body = withLang(headBody(detail.content, PREVIEW_LINES), detail.filePath);
       break;
     case "edit": {
       target = shortPath(detail.filePath);
@@ -155,6 +158,7 @@ function buildToolStep(item: ToolCallItem, _phase: Phase): ClassifyResult {
   if (meta) step.meta = meta;
   addDetail("Tool", item.name);
   if (details.length > 0) step.details = details;
+  if (command && command !== step.target) step.command = command;
   if (body) step.body = body;
   return step;
 }
@@ -259,6 +263,11 @@ function outputBody(output: string | undefined, status: StepStatus): StepBody | 
     return mono(lines.slice(hidden), hidden);
   }
   return mono(lines.slice(0, DONE_HEAD_LINES), Math.max(0, lines.length - DONE_HEAD_LINES));
+}
+
+function withLang(body: StepBody | undefined, path: string): StepBody | undefined {
+  const lang = langForPath(path);
+  return body && lang ? { ...body, lang } : body;
 }
 
 function headBody(text: string | undefined, max: number): StepBody | undefined {

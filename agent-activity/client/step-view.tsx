@@ -3,11 +3,12 @@ import { Icon } from "@getpaseo/plugin/client/ui";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import type { ActivityStep, StepStatus } from "../shared/activity.ts";
-import { ACTIVITY_META, activityLabel } from "./activity-meta.ts";
+import { ACTIVITY_META, activityLabel, type Phase } from "./activity-meta.ts";
 import { stepKey, useSegmentInfo } from "./agent-timeline.ts";
 import { useDetailLevel } from "./detail-level.ts";
 import { StepBodies } from "./step-bodies.tsx";
 import { formatDuration } from "./format.ts";
+import { paletteFor } from "./palette.ts";
 import type { SegmentInfo } from "./segments.ts";
 
 type Props = PluginTimelineItemProps<ActivityStep>;
@@ -20,6 +21,12 @@ const STATUS_ICON: Record<StepStatus, string> = {
 };
 
 // Paseo adds 16px under every plugin item itself, so a step never adds its own bottom margin.
+/** Steps and Full tint only the icon and the phase label; text stays neutral and failures stay red. */
+function phaseColor(phase: Phase, colors: Props["theme"]["colors"]): string {
+  const palette = paletteFor(colors);
+  return phase === "Explore" ? palette.blue : phase === "Change" ? palette.amber : palette.violet;
+}
+
 export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
   const step = item.data;
   const level = useDetailLevel();
@@ -73,7 +80,15 @@ export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
       },
       labelCol: { width: layout.compact ? 84 : 104, flexDirection: "row" as const, alignItems: "center" as const, gap: 6 },
       grow: { flex: 1, flexDirection: "row" as const, gap: 8, alignItems: "center" as const, minWidth: 0 },
-      body: { paddingLeft: layout.compact ? 8 : 12, paddingBottom: 4 },
+      // A guide line under the icon ties the detail to its step and sets it apart from the next step.
+      body: {
+        marginLeft: 15,
+        marginTop: 4,
+        marginBottom: 10,
+        paddingLeft: layout.compact ? 10 : 14,
+        borderLeftWidth: 2,
+        borderLeftColor: colors.border,
+      },
     }),
     [colors, layout.compact, failed, running, canceled, proseTarget],
   );
@@ -118,7 +133,7 @@ export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
         style={styles.row}
       >
         <View style={styles.labelCol}>
-          <Icon name={meta.icon} size={14} color={failed ? colors.statusDanger : colors.foregroundMuted} />
+          <Icon name={meta.icon} size={14} color={failed ? colors.statusDanger : phaseColor(meta.phase, colors)} />
           <Text style={styles.label}>{label}</Text>
         </View>
         <View style={styles.grow}>
@@ -150,7 +165,7 @@ function Headers({ info, theme }: { info: SegmentInfo; theme: Props["theme"] }) 
   return (
     <View>
       {info.run ? (
-        <Text style={{ color: colors.foregroundMuted, fontSize: 12, fontWeight: "600", paddingBottom: 6 }}>
+        <Text style={{ color: colors.foregroundMuted, fontSize: 12, fontWeight: "600", paddingHorizontal: 8, paddingBottom: 10 }}>
           {[
             `${info.run.steps} step${info.run.steps === 1 ? "" : "s"}`,
             formatDuration((info.run.running ? now : info.run.endMs) - info.run.startMs),
@@ -167,12 +182,13 @@ function Headers({ info, theme }: { info: SegmentInfo; theme: Props["theme"] }) 
               ? colors.statusDanger
               : info.phase.running
                 ? colors.foreground
-                : colors.foregroundMuted,
+                : phaseColor(info.phase.phase, colors),
             fontSize: 11,
             fontWeight: "700",
             letterSpacing: 0.6,
-            paddingBottom: 2,
-            paddingTop: info.run ? 0 : 6,
+            paddingHorizontal: 8,
+            paddingBottom: 6,
+            paddingTop: info.run ? 0 : 14,
           }}
         >
           {info.phase.phase.toUpperCase()}

@@ -198,3 +198,17 @@ test("tool steps carry the call id and reasoning does not", () => {
   assert.equal(step(tool({ callId: "toolu_1", detail: { type: "shell", command: "x" } })).callId, "toolu_1");
   assert.equal(classifyReasoning({ type: "reasoning", text: "hm" }, "complete")?.callId, undefined);
 });
+
+test("a shell step keeps its full command for highlighting only when the target differs", () => {
+  const long = step(tool({ detail: { type: "shell", command: `grep -rn needle ${"/very/long/path".repeat(12)}`, output: "x" } }));
+  assert.equal(long.command?.startsWith("grep -rn needle"), true);
+  const short = step(tool({ detail: { type: "shell", command: "ls", output: "x" } }));
+  assert.equal(short.command, undefined);
+});
+
+test("file content gets a highlight language from the file extension only", () => {
+  const code = step(tool({ name: "Read", detail: { type: "read", filePath: "/a/b.ts", content: "const a = 1" } }));
+  assert.equal(code.body?.lang, "js");
+  const text = step(tool({ name: "Read", detail: { type: "read", filePath: "/a/notes.txt", content: "hello" } }));
+  assert.equal(text.body?.lang, undefined);
+});
