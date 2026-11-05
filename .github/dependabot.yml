@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directories:
+      - /usage-pill
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    # The Paseo plugins pin these to the Paseo host runtime.
+    ignore:
+      - dependency-name: react
+      - dependency-name: react-native
+    groups:
+      npm-dependencies:
+        update-types: ["minor", "patch"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        update-types: ["minor", "patch"]

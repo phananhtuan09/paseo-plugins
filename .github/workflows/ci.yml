@@ -1,0 +1,28 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Typecheck Paseo plugins
+        run: |
+          for manifest in */paseo-plugin.json; do
+            plugin="$(dirname "$manifest")"
+            echo "::group::$plugin"
+            (cd "$plugin" && npm ci && npm run typecheck)
+            echo "::endgroup::"
+          done
