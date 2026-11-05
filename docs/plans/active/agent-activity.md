@@ -199,7 +199,6 @@ export const activityStepSchema = z.object({
   details: z.array(z.object({ label: z.string(), value: z.string() })).optional(), // full path, URL, raw tool name
   body: body.optional(),
   errorText: z.string().optional(), // ≤2000 chars
-  startedAt: z.string().optional(), // ISO, for elapsed time
 });
 ```
 
@@ -286,7 +285,7 @@ Hướng đã chốt là **Flow**, mockup tương tác ở `docs/mockups/agent-a
 Mỗi mốc có thể chạy được và kiểm được riêng.
 Đánh dấu `[x]` khi mốc đã làm xong và kiểm xong.
 
-- [ ] Mốc 1 · nền: scaffold `agent-activity/` bằng `paseo plugin init`, `shared/activity.ts`, `client/classify.ts` và `activity-meta.ts` với `classify.test.ts` dùng fixture từ `docs/observed/agent-activity.md`; typecheck và `node --test` đạt.
+- [x] Mốc 1 · nền: scaffold `agent-activity/` bằng `paseo plugin init`, `shared/activity.ts`, `client/classify.ts` và `activity-meta.ts` với `classify.test.ts` dùng fixture từ `docs/observed/agent-activity.md`; typecheck và `node --test` đạt.
 - [ ] Mốc 2 · timeline: transformer, renderer ở ba mức, `detail-level.ts`, `step-bodies.tsx`; cài lên daemon E2E, kiểm bằng một turn Claude Code có đọc, sửa, chạy lệnh (cả lệnh lỗi), cả lúc đang stream.
 - [ ] Mốc 3 · pill và đầu đoạn: `agent-timeline.ts`, `segments.ts` (có test), đầu đoạn và nhãn pha ở Steps và Full, hai composer pill.
 - [ ] Mốc 4 · hoàn thiện: README, E2E Playwright (cần người dùng đồng ý cài Playwright trong `agent-activity/e2e/`), ảnh desktop và compact, theme sáng và tối, `docs/observed/agent-activity.md` cập nhật theo kết quả.
@@ -322,7 +321,7 @@ Dữ liệu thật của Claude Code (3 turn, chi tiết ở `docs/observed/agen
   Meta `+X −Y` và khối diff phải tự tính từ hai chuỗi đó.
 - `read` chỉ có `content` khi đã xong, nên meta `N lines` chỉ hiện sau khi xong.
 - `search` kiểu `web_search` không có `webResults` hay số kết quả, nên meta `N results` không có dữ liệu.
-- Paseo phát thêm item `tool_call` tổng hợp kiểu `plain_text`: `agent_message` (tin nhắn do agent khác gửi) và `task_notification` (trùng với bước `Bash` đã có).
+- Paseo phát thêm item `tool_call` tổng hợp kiểu `plain_text` (mốc 1: `classify` trả `undefined` cho `agent_message` và ẩn `task_notification` bằng `[]`; thời gian đã chạy lấy từ `timestamp` của renderer, không có `startedAt` trong data): `agent_message` (tin nhắn do agent khác gửi) và `task_notification` (trùng với bước `Bash` đã có).
   Bảng hiện coi `plain_text` là `tool` nên chúng sẽ hiện thành hai bước thừa; `classify` phải trả `undefined` cho `agent_message` và xử lý `task_notification` riêng.
 - `reasoning` chỉ có `text`, đến từng đoạn nhỏ; Haiku 5.5 không phát reasoning, Sonnet 5.5 với thinking cao thì có.
 

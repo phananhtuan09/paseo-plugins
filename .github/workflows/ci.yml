@@ -23,6 +23,6 @@ jobs:
           for manifest in */paseo-plugin.json; do
             plugin="$(dirname "$manifest")"
             echo "::group::$plugin"
-            (cd "$plugin" && npm ci && npm run typecheck)
+            (cd "$plugin" && npm ci && npm run typecheck && npm test --if-present)
             echo "::endgroup::"
           done
