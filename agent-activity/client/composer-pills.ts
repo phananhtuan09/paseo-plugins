@@ -13,14 +13,11 @@ import { formatDuration } from "./format.ts";
 const LABELS: Record<DetailLevel, string> = { brief: "Brief", steps: "Steps", full: "Full" };
 const TARGET_MAX = 36;
 
-// The pill shows only the level; the host requires an icon, so it gets one that draws nothing.
-const noIcon = () => null;
-
 function detailButton() {
   const level = getDetailLevel();
   return {
     title: `Detail level: ${LABELS[level]}. Tap to switch.`,
-    icon: noIcon,
+    icon: "ListTree",
     label: LABELS[level],
     behavior: {
       kind: "action" as const,
