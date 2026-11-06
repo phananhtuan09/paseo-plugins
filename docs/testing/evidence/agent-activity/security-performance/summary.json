@@ -1,0 +1,257 @@
+{
+ "schema": "security-performance-check/summary@1",
+ "track": "both",
+ "target": {
+  "label": "PR #3 phananhtuan09/paseo-plugins",
+  "base_sha": "4c5c34b",
+  "head_sha": "51519a2"
+ },
+ "signals_loaded": [
+  {
+   "id": "authz-route",
+   "file": "references/security-signals.md",
+   "matched_paths": [
+    "agent-activity/client/classify.ts",
+    "agent-activity/client/highlight.ts"
+   ]
+  },
+  {
+   "id": "object-id-access",
+   "file": "references/security-signals.md",
+   "matched_paths": []
+  },
+  {
+   "id": "markup-render",
+   "file": "references/security-signals.md",
+   "matched_paths": []
+  },
+  {
+   "id": "open-redirect",
+   "file": "references/security-signals.md",
+   "matched_paths": []
+  },
+  {
+   "id": "upload-validation",
+   "file": "references/security-signals.md",
+   "matched_paths": []
+  },
+  {
+   "id": "client-secrets",
+   "file": "references/security-signals.md",
+   "matched_paths": [
+    "agent-activity/client/activity-meta.ts",
+    "agent-activity/client/agent-timeline.ts",
+    "agent-activity/client/classify.ts",
+    "agent-activity/client/composer-pills.ts",
+    "agent-activity/client/detail-level.ts",
+    "agent-activity/client/format.ts",
+    "agent-activity/client/highlight.ts",
+    "agent-activity/client/palette.ts",
+    "agent-activity/client/segments.ts",
+    "agent-activity/client/step-bodies.tsx",
+    "agent-activity/client/step-view.tsx",
+    "agent-activity/client/web.ts"
+   ]
+  },
+  {
+   "id": "sensitive-response",
+   "file": "references/security-signals.md",
+   "matched_paths": [
+    "agent-activity/client/highlight.ts",
+    "agent-activity/client/palette.ts",
+    "agent-activity/client/step-bodies.tsx",
+    "agent-activity/package-lock.json"
+   ]
+  },
+  {
+   "id": "cookie-flags",
+   "file": "references/security-signals.md",
+   "matched_paths": []
+  }
+ ],
+ "coverage": [
+  {
+   "path": "agent-activity/client/*.ts(x)",
+   "in_scope": true,
+   "notes": ""
+  },
+  {
+   "path": "agent-activity/shared/activity.ts",
+   "in_scope": true,
+   "notes": ""
+  },
+  {
+   "path": "agent-activity/index.client.tsx",
+   "in_scope": true,
+   "notes": ""
+  },
+  {
+   "path": ".github/workflows/ci.yml",
+   "in_scope": true,
+   "notes": ""
+  },
+  {
+   "path": ".github/dependabot.yml",
+   "in_scope": true,
+   "notes": ""
+  },
+  {
+   "signal_id": "authz-route",
+   "decision": "skipped",
+   "reason": "The PR adds no server, route, or RPC: the plugin is client-only and registers only timeline transformers and composer pills; authorization stays in the host daemon."
+  },
+  {
+   "signal_id": "object-id-access",
+   "decision": "skipped",
+   "reason": "No object is loaded by an ID from a request; the plugin only reads the timeline of agents the host already lists to the same user."
+  },
+  {
+   "signal_id": "markup-render",
+   "decision": "applies",
+   "reason": "Command text, file content and tool output from agents are rendered by highlight.ts and step-bodies.tsx; checked that they become React Native <Text> children, with no innerHTML, dangerouslySetInnerHTML or eval."
+  },
+  {
+   "signal_id": "open-redirect",
+   "decision": "skipped",
+   "reason": "No redirect, navigation or location write exists in the changed code (grep for redirect/location/navigate found none)."
+  },
+  {
+   "signal_id": "upload-validation",
+   "decision": "skipped",
+   "reason": "No upload or file-write path; the plugin never writes files."
+  },
+  {
+   "signal_id": "client-secrets",
+   "decision": "applies",
+   "reason": "Checked agent-activity/** and the CI/dependabot files for process.env, tokens and keys: none; the only storage is localStorage for the detail level (web.ts)."
+  },
+  {
+   "signal_id": "sensitive-response",
+   "decision": "applies",
+   "reason": "The plugin renders tool output the host already shows; it adds no endpoint and sends nothing over the network, checked by grep for fetch/XMLHttpRequest/WebSocket in client/ and shared/."
+  },
+  {
+   "signal_id": "cookie-flags",
+   "decision": "skipped",
+   "reason": "The change sets no cookie or session; the only browser storage is localStorage for a three-value UI preference."
+  }
+ ],
+ "probes": [],
+ "performance_scope": {
+  "project_type": "web-ui",
+  "collectors": [
+   "playwright",
+   "http"
+  ]
+ },
+ "browser_metrics": {
+  "lcp": {
+   "order": "interleaved",
+   "base": [
+    748,
+    772,
+    760,
+    856,
+    796
+   ],
+   "head": [
+    780,
+    764,
+    792,
+    808,
+    816
+   ],
+   "verdict": "pass"
+  },
+  "cls": {
+   "order": "interleaved",
+   "base": [
+    0.2226,
+    0.2222,
+    0.2222,
+    0.2222,
+    0.2222
+   ],
+   "head": [
+    0.2222,
+    0.2222,
+    0.2222,
+    0.2222,
+    0.2222
+   ],
+   "verdict": "informational"
+  },
+  "inp-tbt": {
+   "order": "interleaved",
+   "base": [
+    493,
+    516,
+    502,
+    590,
+    542
+   ],
+   "head": [
+    516,
+    500,
+    518,
+    558,
+    552
+   ],
+   "verdict": "informational"
+  },
+  "long-tasks": {
+   "order": "interleaved",
+   "base": [
+    5,
+    5,
+    5,
+    5,
+    5
+   ],
+   "head": [
+    5,
+    5,
+    5,
+    5,
+    5
+   ],
+   "verdict": "pass"
+  }
+ },
+ "budgets": {
+  "probes": {
+   "used": 0,
+   "limit": 20
+  }
+ },
+ "conditions": {
+  "base": "Paseo web UI with agent-activity disabled (paseo plugin disable); main has no such plugin",
+  "head": "same daemon with agent-activity enabled from PR head 51519a2",
+  "host": "http://127.0.0.1:6801",
+  "viewport": "1440x900",
+  "throttle": {
+   "cpu": 1,
+   "network": "none"
+  },
+  "cache": "cold (new browser context per run)",
+  "auth": "none",
+  "tools": {
+   "playwright": "1.64.1",
+   "node": "v22.20.0",
+   "paseo": "0.15.0"
+  }
+ },
+ "body_scan": {
+  "ran": true,
+  "hars": [],
+  "hit_count": 0
+ },
+ "limits": [
+  "Not a penetration test, dependency CVE audit, or load test.",
+  "project-runtime.md declares no probe budget and no role accounts; the limit 20 is the skill default and no probe ran (the plugin has no server/HTTP surface).",
+  "Base is the same Paseo build with the plugin disabled, not a git base: main has no agent-activity plugin.",
+  "LCP/CLS/TBT/long tasks were measured on the Paseo app load plus opening the fixture agent (5 interleaved runs per side, A/A with 5 more base runs); CLS 0.222 and TBT ~520ms exceed the abs budgets on BOTH sides, so they belong to the host app (PRE_EXISTING, level warn).",
+  "Exact HARs (50 MB each, JS bundle embedded) were kept outside the repo in /tmp/spc: 5 entries per page load on both sides, background requests after navigation 1 on both; scan-bodies found 0 hits. The plugin talks over the existing WebSocket, which Playwright HARs do not capture per message.",
+  "Leftovers: /tmp/spc (HARs, scripts), /tmp/paseo-e2e-home daemon (PID 49056), worktree ../paseo-plugins-aa."
+ ]
+}
