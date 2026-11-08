@@ -13,7 +13,7 @@ At Brief and Steps a running step also shows what the user needs to decide wheth
 - A running command shows a clock that counts up from its start, one per step.
 - `Waiting for approval` (amber, with no clock) while a permission request is unanswered; after approval the clock starts again.
 - `In background · 3m 20s` (dashed border) for a Claude Code command moved to the background by its timeout or `run_in_background`.
-  It ends as `Ran` with its total time, or `exit N · 3m 22s` in red, when Claude Code's completion notification arrives.
+  It ends as `Ran` with its total time, or `exit N · 3m 22s` in red, when Claude Code's completion notification arrives (`killed` in red if the command was stopped, for example by a daemon restart).
   `status unknown` appears if the agent closed before that notification.
 - A denied permission request shows `denied` in red.
 - Times from one hour show as `1h 15m`.

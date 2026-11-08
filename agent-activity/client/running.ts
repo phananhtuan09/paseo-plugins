@@ -5,7 +5,7 @@ export interface RunningContext {
   /** Timestamp of the step's entry: its start while running, its end once finished. */
   timeMs: number;
   /** `task_notification` that ended a background command. */
-  notification?: { timeMs: number; text: string };
+  notification?: { timeMs: number; text: string; status?: string };
   /** The user has not yet answered this step's permission request. */
   waiting: boolean;
   /** When the user answered the permission request, if this client saw it. */
@@ -20,7 +20,7 @@ export type Live =
   | { kind: "wait" }
   | { kind: "bg"; startMs?: number }
   | { kind: "unknown" }
-  | { kind: "bgdone"; ok: boolean; exitCode?: number; totalMs?: number };
+  | { kind: "bgdone"; ok: boolean; exitCode?: number; outcome?: string; totalMs?: number };
 
 /** `undefined` means the step shows exactly what its status says. */
 export function deriveRunning(step: ActivityStep, context: RunningContext): Live | undefined {
@@ -40,10 +40,13 @@ export function deriveRunning(step: ActivityStep, context: RunningContext): Live
   if (context.notification) {
     const code = /\(exit code (\d+)\)/.exec(context.notification.text);
     const exitCode = code ? Number(code[1]) : undefined;
+    // `status` is `completed`, or `killed` when the command was stopped (no exit code then).
+    const { status } = context.notification;
     return {
       kind: "bgdone",
-      ok: exitCode === undefined || exitCode === 0,
+      ok: (exitCode === undefined || exitCode === 0) && (status === undefined || status === "completed"),
       ...(exitCode !== undefined ? { exitCode } : {}),
+      ...(status !== undefined ? { outcome: status } : {}),
       ...(startMs !== undefined ? { totalMs: Math.max(0, context.notification.timeMs - startMs) } : {}),
     };
   }

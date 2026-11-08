@@ -224,10 +224,19 @@ Mỗi mốc chạy được và kiểm được riêng.
 
 - [x] Mốc 0 · commit thứ nhất trên nhánh làm việc: policy, mockup, plan này và bằng chứng spike. Commit implement làm sau (quyết định vòng 5, câu 3).
 - [x] Mốc 1 · nền: `formatDuration` có giờ, trường `background` và `denied` ở `classify.ts`, `running.ts` cùng test bằng fixture spike.
-- [ ] Mốc 2 · store: gom `task_notification`, xử lý event quyền, đọc `agent.pendingPermissions` và `agent.status`, `live` trên hàng. Đã code và có unit test; còn phải xác nhận hình dạng `pendingPermissions` bằng một lần refetch lúc đang chờ quyền (cần cài lại plugin lên daemon E2E).
-- [x] Mốc 3 · đồng hồ chung `clock.ts` và component `Elapsed`, thay `useNow` và `useElapsed`.
-- [ ] Mốc 4 · hiển thị: bốn trạng thái mới ở Brief và Steps, accessibility, kiểm icon, ảnh so với mockup. Đã xem trên trình duyệt (desktop, sáng và tối): `Layers` và `ShieldAlert` hiện đúng; `CircleDashed` (`status unknown`) chưa quan sát.
-- [ ] Mốc 5 · README đã cập nhật; E2E `@R1` (chờ quyền rồi Allow) và `@R2` (vào nền bằng `timeout` 5000 rồi kết thúc) đã pass trên daemon E2E, ở desktop sáng và tối. `timeout` nhỏ cũng chuyển xuống nền. Còn lại: E2E compact, `run_in_background`, bị dừng, mất dấu, reload giữa chừng, hình dạng `pendingPermissions` khi refetch. Phần còn lại của mốc: E2E và demo cho từng tình huống, cài lên daemon local và kiểm trạng thái `running`.
+- [x] Mốc 2 · store: gom `task_notification`, xử lý event quyền, đọc `agent.pendingPermissions` và `agent.status`, `live` trên hàng. Đã xác nhận hình dạng `pendingPermissions` khi đang chờ quyền: phần tử có `id` và `metadata.toolUseId`, rỗng sau khi duyệt.
+- [x] Mốc 3 · đồng hồ chung `clock.ts` và component `LiveText`, thay `useNow` và `useElapsed`.
+- [x] Mốc 4 · hiển thị: đã xem trên trình duyệt (desktop và compact, sáng và tối). `Layers` và `ShieldAlert` hiện đúng. `CircleDashed` (`status unknown`) không tái hiện được trên daemon E2E nên chỉ có unit test.
+- [x] Mốc 5 · README đã cập nhật. E2E `@R1` (chờ quyền rồi Allow), `@R2` (`timeout` 5000 vào nền), `@R3` (`run_in_background`), `@R4` (dừng agent), `@R5` (reload giữa lúc chạy), `@R6` (restart daemon, tùy chọn `E2E_RESTART=1`) pass ở desktop; `@R1` đến `@R5` cũng pass ở compact. Plugin cài từ nhánh này lên daemon E2E, trạng thái `running`.
+
+### Điều phát hiện khi làm E2E (khác với spike)
+
+- Dừng agent thêm một record `failed` trống (`name: "tool"`, detail `unknown`) sau record `canceled`, và nó che mất bước. `buildRows` giờ giữ bước `canceled`.
+- Restart daemon làm Claude Code gửi `task_notification` với `status: "killed"` và không có exit code (khác spike C10b, nơi tiến trình sống tiếp). Bước nền hiện `killed` màu đỏ thay vì `Ran ✓`.
+  Chính sách chưa nói trường hợp này; đây là lựa chọn của coding agent, cần chủ dự án xác nhận.
+- Output chạy nền thật có thêm câu sau `(ID: …)`, nên regex không neo cuối chuỗi.
+- `status unknown` (agent `closed` và không có thông báo) không tái hiện được: sau restart agent ở trạng thái `idle`.
+- `timeout` nhỏ (5000) cũng chuyển xuống nền.
 
 ## Rủi ro và chỗ chưa chắc
 

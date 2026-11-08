@@ -53,7 +53,9 @@ export function buildRows(entries: readonly RawEntry[], turnRunning: boolean, co
     if (item.type !== "tool_call" || typeof item.callId !== "string") continue;
     const previous = latest.get(item.callId);
     // A terminal record wins over a stale running snapshot, even if delivered later.
-    if (previous === undefined || item.status !== "running" || entries[previous].item.status === "running") latest.set(item.callId, index);
+    // Stopping an agent adds a bare failed record (no detail) after the canceled one; it must not hide the canceled step.
+    const stub = previous !== undefined && isBareFailure(item) && entries[previous].item.status === "canceled";
+    if (!stub && (previous === undefined || item.status !== "running" || entries[previous].item.status === "running")) latest.set(item.callId, index);
   }
   const activeTurn = entries[entries.length - 1]?.turnId;
   for (const [index, entry] of entries.entries()) {
@@ -91,23 +93,27 @@ export function buildRows(entries: readonly RawEntry[], turnRunning: boolean, co
   return rows;
 }
 
+function isBareFailure(item: { [key: string]: unknown }): boolean {
+  return item.status === "failed" && (item.detail as { type?: string } | undefined)?.type === "unknown";
+}
+
 /** A command in the background is still running, and one that ended there takes the outcome its notification reports. */
 function withLive(step: ActivityStep, live: Live): ActivityStep {
   if (live.kind === "bg") return { ...step, status: "running" };
   if (live.kind !== "bgdone") return step;
   if (live.ok) return step;
-  return { ...step, status: "failed", meta: live.exitCode !== undefined ? `exit ${live.exitCode}` : "failed" };
+  return { ...step, status: "failed", meta: live.exitCode !== undefined ? `exit ${live.exitCode}` : (live.outcome ?? "failed") };
 }
 
 /** `task_notification` entries are hidden, but they end background commands; they link to their step by `metadata.toolUseId`. */
-function notificationsByCall(entries: readonly RawEntry[]): Map<string, { timeMs: number; text: string }> {
-  const result = new Map<string, { timeMs: number; text: string }>();
+function notificationsByCall(entries: readonly RawEntry[]): Map<string, { timeMs: number; text: string; status?: string }> {
+  const result = new Map<string, { timeMs: number; text: string; status?: string }>();
   for (const entry of entries) {
-    const item = entry.item as { type: string; name?: unknown; detail?: { text?: unknown }; metadata?: { toolUseId?: unknown } };
+    const item = entry.item as { type: string; name?: unknown; detail?: { text?: unknown }; metadata?: { toolUseId?: unknown; status?: unknown } };
     if (item.type !== "tool_call" || item.name !== "task_notification") continue;
     const toolUseId = item.metadata?.toolUseId;
     if (typeof toolUseId !== "string") continue;
-    result.set(toolUseId, { timeMs: Date.parse(entry.timestamp), text: typeof item.detail?.text === "string" ? item.detail.text : "" });
+    result.set(toolUseId, { timeMs: Date.parse(entry.timestamp), text: typeof item.detail?.text === "string" ? item.detail.text : "", ...(typeof item.metadata?.status === "string" ? { status: item.metadata.status } : {}) });
   }
   return result;
 }

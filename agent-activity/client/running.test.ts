@@ -55,3 +55,8 @@ test("a notification wins over a closed agent", () => {
   const live = deriveRunning(run({ background: moved }), { ...base, agentClosed: true, notification: { timeMs: 150_000, text: "(exit code 0)" } });
   assert.equal(live?.kind, "bgdone");
 });
+
+test("a notification for a killed command is a failure named by its status, even with no exit code", () => {
+  const live = deriveRunning(run({ background: moved }), { ...base, notification: { timeMs: 130_000, text: "Background command was stopped", status: "killed" } });
+  assert.deepEqual(live, { kind: "bgdone", ok: false, outcome: "killed", totalMs: 150_000 });
+});

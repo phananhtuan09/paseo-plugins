@@ -122,7 +122,7 @@ test("@K8 answers and user messages keep Paseo's default rendering", async ({ pa
 
 // The two cases below need an agent in `default` mode so Bash asks for permission.
 test("@R1 live: a command waiting for approval shows Waiting for approval, then a clock after Allow", async ({ page }, info) => {
-  test.skip(process.env.E2E_LIVE !== "1" || info.project.name !== "desktop", "consumes an agent turn; opt in with E2E_LIVE=1");
+  test.skip(process.env.E2E_LIVE !== "1", "consumes an agent turn; opt in with E2E_LIVE=1");
   await openAgent(page);
   await setLevel(page, "Brief");
   execFile("paseo", ["send", agentId, "Run the shell command `touch r1.txt && sleep 6 && echo done` and then reply with the single word DONE.", "--home", home], () => {});
@@ -141,7 +141,7 @@ test("@R1 live: a command waiting for approval shows Waiting for approval, then 
 });
 
 test("@R2 live: a command moved to the background shows In background with a clock, then its total time", async ({ page }, info) => {
-  test.skip(process.env.E2E_LIVE !== "1" || info.project.name !== "desktop", "consumes an agent turn; opt in with E2E_LIVE=1");
+  test.skip(process.env.E2E_LIVE !== "1", "consumes an agent turn; opt in with E2E_LIVE=1");
   await openAgent(page);
   await setLevel(page, "Steps");
   const stamp = String(Date.now());
@@ -153,7 +153,7 @@ test("@R2 live: a command moved to the background shows In background with a clo
     await expect(background).toBeVisible({ timeout: 60_000 });
     await expect(background).toContainText(/In background · \d+s/);
     await shot(page, info, "background");
-    const ended = page.getByRole("button", { name: new RegExp(`^Ran : r2-${stamp}.*, done, collapsed$`) });
+    const ended = page.getByRole("button", { name: new RegExp(`^Ran .*r2-${stamp}.*, done, collapsed$`) });
     await expect(ended).toBeVisible({ timeout: 90_000 });
     await expect(ended).toContainText(/\d+s/);
     await checkpoint(info, "background", { ended: await ended.innerText() });
@@ -161,4 +161,101 @@ test("@R2 live: a command moved to the background shows In background with a clo
   } finally {
     clearInterval(allow);
   }
+});
+
+const autoAllow = () => setInterval(() => execFile("paseo", ["permit", "allow", agentId, "--all", "--home", home], () => {}), 1500);
+
+test("@R3 live: run_in_background shows In background right away, then its total time", async ({ page }, info) => {
+  test.skip(process.env.E2E_LIVE !== "1", "consumes an agent turn; opt in with E2E_LIVE=1");
+  await openAgent(page);
+  await setLevel(page, "Brief");
+  const stamp = String(Date.now());
+  const command = `: r3-${stamp}; i=0; while [ $i -lt 12 ]; do sleep 1; i=$((i+1)); done; echo finished-r3`;
+  execFile("paseo", ["send", agentId, `Run this exact Bash command with run_in_background set to true: ${command} . Then reply with the single word DONE.`, "--home", home], () => {});
+  const allow = autoAllow();
+  try {
+    const background = page.getByRole("button", { name: new RegExp(`r3-${stamp}.*in background, collapsed$`) });
+    await expect(background).toBeVisible({ timeout: 60_000 });
+    await expect(background).toContainText(/In background · \d+s/);
+    await shot(page, info, "run-in-background");
+    const ended = page.getByRole("button", { name: new RegExp(`^Ran .*r3-${stamp}.*, done, collapsed$`) });
+    await expect(ended).toBeVisible({ timeout: 60_000 });
+    await expect(ended).toHaveText(/\d+s/);
+    await shot(page, info, "run-in-background-done");
+  } finally {
+    clearInterval(allow);
+  }
+});
+
+test("@R4 live: stopping the agent shows the step as canceled with no clock", async ({ page }, info) => {
+  test.skip(process.env.E2E_LIVE !== "1", "consumes an agent turn; opt in with E2E_LIVE=1");
+  await openAgent(page);
+  await setLevel(page, "Brief");
+  const stamp = String(Date.now());
+  const command = `: r4-${stamp}; i=0; while [ $i -lt 40 ]; do sleep 1; i=$((i+1)); done`;
+  execFile("paseo", ["send", agentId, `Run this exact Bash command: ${command}`, "--home", home], () => {});
+  const allow = autoAllow();
+  try {
+    const running = page.getByRole("button", { name: new RegExp(`r4-${stamp}.*, running, collapsed$`) });
+    await expect(running).toBeVisible({ timeout: 60_000 });
+    await page.waitForTimeout(3000);
+    execFile("paseo", ["stop", agentId, "--home", home], () => {});
+    const canceled = page.getByRole("button", { name: new RegExp(`r4-${stamp}.*, canceled, collapsed$`) });
+    await expect(canceled).toBeVisible({ timeout: 30_000 });
+    await expect(canceled).not.toContainText(/\d+s$/);
+    await shot(page, info, "stopped");
+  } finally {
+    clearInterval(allow);
+  }
+});
+
+test("@R5 live: reloading the page mid-run keeps the clock", async ({ page }, info) => {
+  test.skip(process.env.E2E_LIVE !== "1", "consumes an agent turn; opt in with E2E_LIVE=1");
+  await openAgent(page);
+  await setLevel(page, "Brief");
+  const stamp = String(Date.now());
+  const command = `: r5-${stamp}; i=0; while [ $i -lt 40 ]; do sleep 1; i=$((i+1)); done`;
+  execFile("paseo", ["send", agentId, `Run this exact Bash command: ${command}`, "--home", home], () => {});
+  const allow = autoAllow();
+  try {
+    const running = () => page.getByRole("button", { name: new RegExp(`r5-${stamp}.*, running, collapsed$`) });
+    await expect(running()).toBeVisible({ timeout: 60_000 });
+    await page.waitForTimeout(9000);
+    await openAgent(page);
+    await setLevel(page, "Brief");
+    await expect(running()).toBeVisible({ timeout: 20_000 });
+    const seconds = Number(/(\d+)s$/.exec(await running().innerText())?.[1]);
+    expect(seconds).toBeGreaterThanOrEqual(9);
+    await checkpoint(info, "reload", { secondsAfterReload: seconds });
+    await shot(page, info, "reload");
+  } finally {
+    clearInterval(allow);
+    execFile("paseo", ["stop", agentId, "--home", home], () => {});
+  }
+});
+
+test("@R6 live: a daemon restart kills a background command and the step shows killed", async ({ page }, info) => {
+  test.skip(process.env.E2E_LIVE !== "1" || process.env.E2E_RESTART !== "1", "restarts the isolated E2E daemon; opt in with E2E_LIVE=1 E2E_RESTART=1");
+  test.setTimeout(180_000);
+  await openAgent(page);
+  await setLevel(page, "Brief");
+  const stamp = String(Date.now());
+  const command = `: r6-${stamp}; i=0; while [ $i -lt 120 ]; do sleep 1; i=$((i+1)); done`;
+  execFile("paseo", ["send", agentId, `Run this exact Bash command with the timeout parameter set to 5000: ${command}`, "--home", home], () => {});
+  const allow = autoAllow();
+  try {
+    await expect(page.getByRole("button", { name: new RegExp(`r6-${stamp}.*in background, collapsed$`) })).toBeVisible({ timeout: 60_000 });
+  } finally {
+    clearInterval(allow);
+  }
+  // Restarting the daemon stops the background process; Claude Code reports it as a `killed` task notification with no exit code.
+  // `status unknown` (agent closed, no notification) could not be reproduced here and is covered by unit tests only.
+  execFileSync("paseo", ["daemon", "restart", "--home", home], { encoding: "utf8", timeout: 90_000 });
+  await page.waitForTimeout(5000);
+  await openAgent(page);
+  await setLevel(page, "Brief");
+  const killed = page.getByRole("button", { name: new RegExp(`r6-${stamp}.*failed, collapsed$`) });
+  await expect(killed).toBeVisible({ timeout: 60_000 });
+  await expect(killed).toContainText(/killed/);
+  await shot(page, info, "killed");
 });

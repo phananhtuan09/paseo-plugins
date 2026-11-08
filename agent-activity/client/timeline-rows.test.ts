@@ -83,6 +83,13 @@ test("a command moved to the background stays running until its notification end
   assert.equal(bad[0].step?.meta, "exit 2");
 });
 
+test("a killed background command ends as failed with its status as the label", () => {
+  const killed: RawEntry = { ...notification("t1", 130_000, "stopped"), item: { ...notification("t1", 130_000, "stopped").item, metadata: { toolUseId: "t1", status: "killed" } } as never };
+  const rows = buildRows([shell("t1", "completed", 125_000, MOVED), killed], false);
+  assert.equal(rows[0].step?.status, "failed");
+  assert.equal(rows[0].step?.meta, "killed");
+});
+
 test("a background command of a closed agent without a notification is unknown and not running", () => {
   const rows = buildRows([shell("t1", "completed", 125_000, MOVED)], false, { ...none, agentClosed: true });
   assert.equal(rows[0].live?.kind, "unknown");
@@ -96,4 +103,13 @@ test("two parallel commands keep separate clocks", () => {
 
 test("a normal finished command has no live state", () => {
   assert.equal(buildRows([shell("t1", "completed", 5000, "ok")], false)[0].live, undefined);
+});
+
+test("the bare failed record added when an agent is stopped does not replace the canceled step", () => {
+  const canceled = shell("t1", "canceled", 5000);
+  const stub: RawEntry = { timestamp: new Date(5020).toISOString(), turnId: "turn-1", item: { type: "tool_call", callId: "t1", name: "tool", status: "failed", detail: { type: "unknown", input: null, output: null }, error: { content: "The user doesn't want to proceed" } } };
+  const rows = buildRows([canceled, stub], false);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].step?.status, "canceled");
+  assert.equal(rows[0].step?.activity, "run");
 });
