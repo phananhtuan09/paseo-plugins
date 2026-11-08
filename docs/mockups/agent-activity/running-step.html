@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agent-activity · bước đang chạy</title>
+<style>
+:root{
+  --ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+}
+/* Paseo default theme tokens; --blue/--amber/--violet are the plugin's fixed phase hues (client/palette.ts). */
+.t-light{--s0:#ffffff;--s1:#fafafa;--s2:#f4f4f5;--fg:#1a1a1e;--muted:#71717a;--border:#e4e4e7;--accent:#20744A;--ok:#3e704a;--bad:#9d433b;--warn:#7b5d39;--page:#f4f4f5;--sel:#20744A33;--blue:#2f5fc4;--amber:#9a6700;--violet:#6f42c1}
+.t-dark{--s0:#181B1A;--s1:#1E2120;--s2:#272A29;--fg:#fafafa;--muted:#A1A5A4;--border:#2f3534;--accent:#20744A;--ok:#6cb17b;--bad:#d8847b;--warn:#c09664;--page:#111413;--sel:#20744A66;--blue:#8fb8ff;--amber:#ffc66d;--violet:#cfa9ff}
+*{box-sizing:border-box}
+html{color-scheme:light dark}
+body{margin:0;font-family:var(--ui);background:var(--page);color:var(--fg);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+::selection{background:var(--sel)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--fg);outline-offset:2px;border-radius:6px}
+svg.i{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+
+/* ---------- page chrome ---------- */
+.bar{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--s0)}
+.bar h1{font-size:13px;font-weight:600;margin:0 8px 0 0;white-space:nowrap}
+.bar h1 span{color:var(--muted);font-weight:400}
+.grp{display:flex;align-items:center;gap:6px}
+.grp>label{font-size:12px;color:var(--muted)}
+.seg{display:inline-flex;background:var(--s2);border-radius:8px;padding:2px}
+.seg button{border:0;background:transparent;padding:4px 10px;border-radius:6px;font-size:12px;color:var(--muted);cursor:pointer}
+.seg button:hover{color:var(--fg)}
+.seg button[aria-pressed=true]{background:var(--s0);color:var(--fg);box-shadow:0 1px 2px #0000001f}
+.seg button[hidden]{display:none}
+main{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+h2{font-size:18px;font-weight:600;letter-spacing:-.01em;margin:40px 0 6px}
+h2:first-child{margin-top:0}
+.lead{color:var(--muted);max-width:72ch;margin:0 0 18px}
+.lead b{color:var(--fg);font-weight:600}
+code{font-family:var(--mono);font-size:12.5px;background:var(--s2);padding:1px 4px;border-radius:4px}
+
+/* ---------- live demo ---------- */
+.ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:0 0 8px}
+.btn{border:1px solid var(--border);background:var(--s0);border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer}
+.btn:hover{background:var(--s1)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+input[type=range]{width:min(360px,60vw);accent-color:var(--accent)}
+.clock{font:12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;min-width:52px}
+.marks{font-size:12px;color:var(--muted);margin:0 0 14px;min-height:18px}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.compact .pair{grid-template-columns:repeat(2,390px);justify-content:start;overflow-x:auto}
+.frame{background:var(--s0);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 6px 20px -14px #00000040}
+.fhead{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)}
+.fhead b{color:var(--fg);font-weight:600}
+.tl{padding:16px 16px 6px}
+.compact .tl{padding:14px 12px 6px}
+.user{display:flex;justify-content:flex-end;margin:0 0 16px}
+.user div{background:var(--s2);border-radius:14px;padding:7px 12px;font-size:13.5px;max-width:85%}
+.item{margin-bottom:16px} /* the host adds 16px under every plugin item */
+
+/* ---------- Brief chip (mirrors step-view.tsx) ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 10px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+.chip .lb{color:var(--fg);font-size:13px;font-weight:500;white-space:nowrap}
+.chip .tg{font-family:var(--mono);font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex-shrink:1}
+.chip .tg.prose{font-family:var(--ui)}
+.mt{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.chip.running{border-color:var(--accent);background:var(--s1)}
+/* New states. Each pairs a distinct glyph and text with its border; none relies on color alone. */
+.chip.bg{border-style:dashed;border-color:var(--accent);background:var(--s1)}
+.chip.wait{border-color:var(--warn);background:var(--s1)}
+.chip.wait .mt{color:var(--warn);font-weight:500}
+.chip.unknown{border-style:dashed;background:transparent}
+.chip.failed{border-color:var(--bad)}
+.chip.failed .lb,.chip.failed .mt,.chip.failed .ico{color:var(--bad)}
+.tg.strike{text-decoration:line-through}
+.st-run{color:var(--accent)}.st-bg{color:var(--accent)}.st-wait{color:var(--warn)}.st-unk{color:var(--muted)}
+.st-done{color:var(--ok)}.st-fail{color:var(--bad)}
+
+/* ---------- Steps row (mirrors step-view.tsx) ---------- */
+.runhead{font-size:12px;font-weight:600;color:var(--muted);padding:0 8px 10px;font-variant-numeric:tabular-nums}
+.phase{font-size:11px;font-weight:700;letter-spacing:.6px;padding:0 8px 6px;color:var(--muted)}
+.phase.p-explore{color:var(--blue)}.phase.p-change{color:var(--amber)}.phase.p-verify{color:var(--violet)}.phase.p-running{color:var(--fg)}.phase.p-failed{color:var(--bad)}
+.row{display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:8px}
+.row.running,.row.bg{background:var(--s1)}
+.row.wait{background:var(--s1)}
+.row.wait .mt{color:var(--warn);font-weight:500}
+.row .lc{width:104px;flex:none;display:flex;align-items:center;gap:6px}
+.compact .row .lc{width:84px}
+.row .lb{font-size:13px;font-weight:500;color:var(--fg);white-space:nowrap}
+.row .grow{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.row .tg{font-family:var(--mono);font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex-shrink:1}
+.row .tg.prose{font-family:var(--ui)}
+.row.failed .lb,.row.failed .mt,.row.failed .ico{color:var(--bad)}
+.ico.v-explore{color:var(--blue)}.ico.v-change{color:var(--amber)}.ico.v-verify{color:var(--violet)}
+
+/* ---------- scenarios ---------- */
+.scn{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr) minmax(0,1fr);gap:20px;padding:20px 0;border-top:1px solid var(--border)}
+.compact .scn{grid-template-columns:minmax(200px,260px) 390px 390px;overflow-x:auto}
+.scn:last-child{border-bottom:1px solid var(--border)}
+.scn h3{font-size:14px;font-weight:600;margin:0 0 6px;text-wrap:balance}
+.scn p{margin:0 0 6px;font-size:12.5px;color:var(--muted);max-width:60ch}
+.scn p b{color:var(--fg);font-weight:600}
+.colhead{font-size:11px;font-weight:600;letter-spacing:.4px;color:var(--muted);margin:0 0 8px}
+.view{background:var(--s0);border:1px solid var(--border);border-radius:10px;padding:14px 12px 0;min-width:0}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px 24px;margin:0 0 8px;padding:0;list-style:none}
+.legend li{font-size:12.5px;color:var(--muted)}
+.legend li b{color:var(--fg);font-weight:600;display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.flag{font-size:12.5px;color:var(--muted);border-top:1px solid var(--border);margin-top:28px;padding-top:14px;max-width:80ch}
+.flag b{color:var(--fg)}
+.flag ul{margin:6px 0 0;padding-left:18px}
+</style>
+</head>
+<body class="t-dark">
+<header class="bar">
+  <h1>agent-activity <span>· bước đang chạy (spec sau Grill)</span></h1>
+  <div class="grp"><label>Theme</label><div class="seg" data-key="theme"><button data-v="dark">Dark</button><button data-v="light">Light</button></div></div>
+  <div class="grp"><label>Bố cục</label><div class="seg" data-key="layout"><button data-v="desktop">Desktop</button><button data-v="compact">Mobile</button></div></div>
+</header>
+
+<main>
+  <h2>Chạy thử một lệnh</h2>
+  <p class="lead">Chọn đường đi rồi kéo thanh thời gian. <b>Brief</b> và <b>Steps</b> hiện cùng một bộ tín hiệu, chỉ khác bố cục. Full không đổi nên không có ở đây. Dữ liệu thật tới từ spike 2026-11-08.</p>
+  <div class="ctrl">
+    <div class="grp"><label>Đường đi</label><div class="seg" data-key="path"><button data-v="plain">Lệnh ngắn</button><button data-v="bg">Quá 120s, vào background</button><button data-v="approval">Chờ cấp quyền</button></div></div>
+    <div class="grp"><label>Kết thúc</label><div class="seg" data-key="outcome"><button data-v="done">Xong</button><button data-v="failed">Lỗi</button><button data-v="unknown" id="unkBtn">Mất dấu</button></div></div>
+  </div>
+  <div class="ctrl">
+    <button class="btn primary" id="play">Chạy (20×)</button>
+    <input type="range" id="scrub" min="0" max="230" value="0" aria-label="Thời gian đã chạy">
+    <span class="clock" id="clock">0s</span>
+  </div>
+  <p class="marks" id="marks"></p>
+  <div class="pair">
+    <div class="frame"><div class="fhead"><b>Brief</b>· Claude Code</div><div class="tl" id="liveBrief"></div></div>
+    <div class="frame"><div class="fhead"><b>Steps</b>· Claude Code</div><div class="tl" id="liveSteps"></div></div>
+  </div>
+
+  <h2>Các trạng thái của bước đang chạy</h2>
+  <ul class="legend" id="legend"></ul>
+
+  <h2>Các tình huống trong chính sách</h2>
+  <p class="lead">Mỗi dòng là một tình huống sẽ được demo trên Claude Code. Cột trái ghi người dùng thấy gì và vì sao.</p>
+  <div id="scenarios"></div>
+
+  <div class="flag">
+    <b>Giả định trong mockup cần bạn xác nhận khi duyệt policy:</b>
+    <ul>
+      <li>Bước bị Deny hiện <code>denied</code> màu đỏ ở đuôi, lấy từ <code>Permission request denied</code>. Spec chưa nói chữ cụ thể.</li>
+      <li>Icon của bước bị dừng vẫn màu xanh (<code>statusSuccess</code>) như code hiện tại, vì chính sách giữ nguyên trạng thái này.</li>
+      <li>Màu amber nay chỉ dành cho <code>Waiting for approval</code> (token <code>statusWarning</code>). <code>In background</code> dùng viền nét đứt màu accent để khác viền liền của bước đang chạy trực tiếp.</li>
+      <li>Tên icon Lucide dự kiến: <code>Layers</code>, <code>ShieldAlert</code>, <code>CircleDashed</code>. Cần kiểm tra chúng có trong bản Lucide của Paseo 0.15.x khi implement.</li>
+    </ul>
+  </div>
+</main>
+
+<script>
+const ICONS = {
+  run:'<path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/>',
+  read:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  edit:'<path d="M12.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v9.5"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M13.4 15.6a1 1 0 1 0-3-3l-5 5a2 2 0 0 0-.5.9l-.9 2.8a.5.5 0 0 0 .7.7l2.8-.9a2 2 0 0 0 .9-.5z"/>',
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  delegate:'<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  ban:'<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+  spin:'<path d="M21 12a9 9 0 1 1-6.22-8.56"/>',
+  layers:'<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+  dashed:'<path d="M10.1 2.182a10 10 0 0 1 3.8 0"/><path d="M13.9 21.818a10 10 0 0 1-3.8 0"/><path d="M17.609 3.721a10 10 0 0 1 2.69 2.7"/><path d="M2.182 13.9a10 10 0 0 1 0-3.8"/><path d="M20.279 17.609a10 10 0 0 1-2.7 2.69"/><path d="M21.818 10.1a10 10 0 0 1 0 3.8"/><path d="M3.721 6.391a10 10 0 0 1 2.7-2.69"/><path d="M6.391 20.279a10 10 0 0 1-2.69-2.7"/>',
+};
+const svg = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]}</svg>`;
+const META = {
+  read:{present:'Reading',past:'Read',phase:'explore'},
+  edit:{present:'Editing',past:'Edited',phase:'change'},
+  run:{present:'Running',past:'Ran',phase:'verify'},
+  search:{present:'Searching',past:'Searched',phase:'explore'},
+  delegate:{present:'Delegating',past:'Delegated',phase:'explore'},
+};
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* 12s, 1m 05s, 1h 15m */
+function fmt(s){
+  s = Math.max(0, Math.floor(s));
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`;
+  return `${Math.floor(s/3600)}h ${String(Math.floor((s%3600)/60)).padStart(2,'0')}m`;
+}
+
+const state = { theme:'dark', layout:'desktop', path:'bg', outcome:'done', t:0 };
+
+/* Step model. status: running | done | failed | canceled.
+   mode (running only): fg | wait | bg | unknown.  total: whole duration of a step that went to the background. */
+function derive(s){
+  const parts = [];
+  if (s.status === 'running'){
+    if (s.mode === 'wait') parts.push('Waiting for approval');
+    else if (s.mode === 'bg') parts.push(`In background · ${fmt(s.elapsed)}`);
+    else if (s.mode === 'unknown') parts.push('status unknown');
+    else parts.push(fmt(s.elapsed));
+  } else {
+    if (s.meta) parts.push(s.meta);
+    if (s.total != null) parts.push(fmt(s.total));
+  }
+  return parts.join(' · ');
+}
+function statusIcon(s){
+  if (s.status === 'running'){
+    if (s.mode === 'wait') return `<span class="st-wait">${svg('shield')}</span>`;
+    if (s.mode === 'bg') return `<span class="st-bg">${svg('layers')}</span>`;
+    if (s.mode === 'unknown') return `<span class="st-unk">${svg('dashed')}</span>`;
+    return `<span class="st-run">${svg('spin','spin')}</span>`;
+  }
+  if (s.status === 'failed') return `<span class="st-fail">${svg('x')}</span>`;
+  if (s.status === 'canceled') return `<span class="st-done">${svg('ban')}</span>`; // current code: statusSuccess
+  return `<span class="st-done">${svg('check')}</span>`;
+}
+const label = (s) => s.status === 'running' ? META[s.act].present : META[s.act].past;
+const tgClass = (s) => `tg${s.act === 'delegate' ? ' prose' : ''}${s.status === 'canceled' ? ' strike' : ''}`;
+const stateClass = (s) => s.status === 'running' ? (s.mode || 'fg') === 'fg' ? 'running' : s.mode : s.status;
+const aria = (s) => `${label(s)} ${s.target}, ${s.status === 'running' ? ({wait:'waiting for approval',bg:'in background',unknown:'status unknown'}[s.mode] || 'running') : s.status}`;
+
+function chip(s){
+  const text = derive(s);
+  return `<div class="item"><span class="chip ${stateClass(s)}" role="button" tabindex="0" aria-label="${esc(aria(s))}">
+    <span class="ico">${svg(s.act)}</span><span class="lb">${label(s)}</span>
+    <span class="${tgClass(s)}">${esc(s.target)}</span>
+    ${text ? `<span class="mt">${esc(text)}</span>` : ''}${statusIcon(s)}</span></div>`;
+}
+function row(s, head = ''){
+  const text = derive(s);
+  return `<div class="item">${head}<div class="row ${stateClass(s)}" role="button" tabindex="0" aria-label="${esc(aria(s))}">
+    <div class="lc"><span class="ico v-${META[s.act].phase}">${svg(s.act)}</span><span class="lb">${label(s)}</span></div>
+    <div class="grow"><span class="${tgClass(s)}">${esc(s.target)}</span>${text ? `<span class="mt">${esc(text)}</span>` : ''}</div>
+    ${statusIcon(s)}</div></div>`;
+}
+function stepsList(steps, runSecs){
+  let prev = null;
+  const failed = steps.filter((s) => s.status === 'failed').length;
+  return steps.map((s, i) => {
+    let head = '';
+    if (i === 0) head += `<div class="runhead">${[`${steps.length} step${steps.length === 1 ? '' : 's'}`, fmt(runSecs), failed ? `${failed} failed` : ''].filter(Boolean).join(' · ')}</div>`;
+    const ph = META[s.act].phase;
+    if (ph !== prev){
+      const group = steps.filter((x) => META[x.act].phase === ph);
+      const pcls = group.some((x) => x.status === 'failed') ? 'p-failed' : group.some((x) => x.status === 'running') ? 'p-running' : `p-${ph}`;
+      head += `<div class="phase ${pcls}" style="${i === 0 ? '' : 'padding-top:14px'}">${ph.toUpperCase()}</div>`;
+      prev = ph;
+    }
+    return row(s, head);
+  }).join('');
+}
+
+/* ---------- live demo ---------- */
+const BG_AT = 120, BG_END = 203, CLOSED_AT = 150, WAIT_END = 38, PLAIN_END = 42, APPROVAL_END = 85;
+function liveRun(t){
+  const o = state.outcome, fail = o === 'failed';
+  const T = 'npm test';
+  if (state.path === 'plain'){
+    if (t < PLAIN_END) return { act:'run', target:T, status:'running', mode:'fg', elapsed:t };
+    return { act:'run', target:T, status: fail ? 'failed' : 'done', meta: fail ? 'exit 1' : undefined };
+  }
+  if (state.path === 'approval'){
+    if (t < WAIT_END) return { act:'run', target:T, status:'running', mode:'wait' };
+    if (t < APPROVAL_END) return { act:'run', target:T, status:'running', mode:'fg', elapsed:t - WAIT_END };
+    return { act:'run', target:T, status: fail ? 'failed' : 'done', meta: fail ? 'exit 1' : undefined };
+  }
+  if (t < BG_AT) return { act:'run', target:T, status:'running', mode:'fg', elapsed:t };
+  if (o === 'unknown' && t >= CLOSED_AT) return { act:'run', target:T, status:'running', mode:'unknown' };
+  if (t < BG_END || o === 'unknown') return { act:'run', target:T, status:'running', mode:'bg', elapsed:t };
+  return { act:'run', target:T, status: fail ? 'failed' : 'done', meta: fail ? 'exit 1' : undefined, total:BG_END };
+}
+function liveMarks(t){
+  const m = [];
+  if (state.path === 'plain') m.push(t < PLAIN_END ? 'đang chạy trực tiếp' : 'đã kết thúc, bước nhanh nên không hiện thời gian');
+  if (state.path === 'approval') m.push(t < WAIT_END ? 'chờ bạn bấm Allow, chưa có đồng hồ' : t < APPROVAL_END ? 'đã được duyệt, đồng hồ chạy từ lúc đó' : 'đã kết thúc');
+  if (state.path === 'bg'){
+    if (t < BG_AT) m.push('đang chạy trực tiếp, chưa tới mốc 120s');
+    else if (state.outcome === 'unknown' && t >= CLOSED_AT) m.push('agent đã đóng và không có thông báo kết thúc, dừng đếm');
+    else if (t < BG_END) m.push('Claude Code chuyển lệnh xuống background ở 120s, tiến trình vẫn chạy');
+    else m.push('task_notification đã tới, hiện tổng thời gian chạy');
+  }
+  document.getElementById('marks').textContent = m.join(' · ');
+}
+function renderLive(){
+  const t = state.t;
+  const before = [{ act:'read', target:'package.json', status:'done' }, { act:'edit', target:'src/date.ts', status:'done', meta:'+3 −1' }];
+  const steps = [...before, liveRun(t)];
+  const user = '<div class="user"><div>Fix the UTC formatter and run the tests</div></div>';
+  document.getElementById('liveBrief').innerHTML = user + steps.map(chip).join('');
+  document.getElementById('liveSteps').innerHTML = user + stepsList(steps, t + 6);
+  document.getElementById('clock').textContent = fmt(t);
+  document.getElementById('scrub').value = t;
+  document.getElementById('unkBtn').hidden = state.path !== 'bg';
+  liveMarks(t);
+}
+let timer = null;
+const stopTimer = () => { if (timer){ clearInterval(timer); timer = null; document.getElementById('play').textContent = 'Chạy (20×)'; } };
+document.getElementById('play').onclick = (e) => {
+  if (timer){ stopTimer(); return; }
+  if (state.t >= 230) state.t = 0;
+  e.target.textContent = 'Tạm dừng';
+  timer = setInterval(() => { state.t += 1; renderLive(); if (state.t >= 230) stopTimer(); }, 50);
+};
+document.getElementById('scrub').oninput = (e) => { state.t = Number(e.target.value); renderLive(); };
+
+/* ---------- legend ---------- */
+const LEGEND = [
+  { icon:'spin', cls:'st-run', ttl:'Chạy trực tiếp', txt:'Spinner và thời gian chạy. Mỗi bước có đồng hồ riêng, tính từ timestamp của bước nên reload không làm mất.' },
+  { icon:'shield', cls:'st-wait', ttl:'Waiting for approval', txt:'Glyph khiên, chữ và màu amber thay cho đồng hồ. Đồng hồ chạy từ lúc bạn duyệt.' },
+  { icon:'layers', cls:'st-bg', ttl:'In background', txt:'Viền nét đứt, glyph chồng lớp và đồng hồ tiếp tục. Gồm lệnh quá 120s và lệnh run_in_background.' },
+  { icon:'dashed', cls:'st-unk', ttl:'status unknown', txt:'Viền nét đứt, glyph vòng đứt, dừng đếm. Chỉ khi agent đã đóng mà không có thông báo kết thúc.' },
+];
+document.getElementById('legend').innerHTML = LEGEND.map((l) => `<li><b><span class="${l.cls}">${svg(l.icon, l.icon === 'spin' ? 'spin' : '')}</span>${l.ttl}</b>${l.txt}</li>`).join('');
+
+/* ---------- scenarios ---------- */
+const R = (o) => ({ act:'run', ...o });
+const SCENARIOS = [
+  { title:'Lệnh ngắn đang chạy', steps:[R({target:'npm run lint',status:'running',mode:'fg',elapsed:42})],
+    see:'Spinner và <b>42s</b>, tăng dần.', why:'Bạn biết lệnh còn sống và đã chạy bao lâu. Plugin không nhận được output chạy dần nên không giả lập tiến độ.' },
+  { title:'Hai lệnh chạy song song', steps:[R({target:'npm run build',status:'running',mode:'fg',elapsed:95}),R({target:'npm run typecheck',status:'running',mode:'fg',elapsed:20})],
+    see:'Mỗi bước có đồng hồ riêng: <b>1m 35s</b> và <b>20s</b>.', why:'Spike xác nhận hai lệnh có status và timestamp độc lập.' },
+  { title:'Sub-agent chạy 4 phút', steps:[{act:'delegate',target:'Find all date formatting call sites',status:'running',mode:'fg',elapsed:252}],
+    see:'Chỉ hiện thời gian chạy <b>4m 12s</b>.', why:'Lệnh bên trong sub-agent không xuất hiện trong timeline, nên không có gì để nâng lên.' },
+  { title:'Đang chờ bạn cấp quyền', steps:[R({target:'rm -rf build',status:'running',mode:'wait'})],
+    see:'Glyph khiên, <b>Waiting for approval</b> màu amber, không có đồng hồ.', why:'Người chậm là bạn, không phải lệnh. Đồng hồ chỉ bắt đầu sau khi bạn duyệt.' },
+  { title:'Đã duyệt, lệnh bắt đầu chạy', steps:[R({target:'rm -rf build',status:'running',mode:'fg',elapsed:3})],
+    see:'Trở lại spinner và đồng hồ <b>3s</b>.', why:'Thời gian chờ không bị tính vào lệnh.' },
+  { title:'Bạn từ chối quyền', steps:[R({target:'rm -rf build',status:'failed',meta:'denied'})],
+    see:'Viền đỏ, chữ đỏ, <b>denied</b> và dấu X.', why:'Là lỗi nhưng không phải lỗi của lệnh. Chữ <b>denied</b> khác <b>exit N</b>.' },
+  { title:'Lệnh chạy quá 120s: vào background', steps:[R({target:'npm test',status:'running',mode:'bg',elapsed:200})],
+    see:'Viền nét đứt, glyph chồng lớp, <b>In background · 3m 20s</b>, đồng hồ tiếp tục.', why:'Claude Code không kill lệnh ở 120s mà chuyển xuống background. Hiện <code>Ran ✓</code> ở đây sẽ sai vì tiến trình vẫn chạy.' },
+  { title:'Agent chạy lệnh bằng run_in_background', steps:[R({target:'npm run dev',status:'running',mode:'bg',elapsed:12})],
+    see:'Giống tình huống trên: <b>In background · 12s</b>.', why:'Hai cách vào background trông giống nhau vì cùng là tiến trình chạy tiếp ngoài tầm nhìn.' },
+  { title:'Lệnh chạy nền kết thúc thành công', steps:[R({target:'npm test',status:'done',total:202})],
+    see:'<b>Ran npm test 3m 22s</b> và dấu check.', why:'Bước chậm giữ tổng thời gian khi đọc lại turn.' },
+  { title:'Lệnh chạy nền kết thúc lỗi', steps:[R({target:'npm test',status:'failed',meta:'exit 1',total:202})],
+    see:'<b>exit 1 · 3m 22s</b> màu đỏ và dấu X.', why:'Nhìn qua là thấy lỗi. Thời gian cho biết lệnh hỏng sau bao lâu.' },
+  { title:'Lệnh chạy nền mất dấu', steps:[R({target:'npm test',status:'running',mode:'unknown'})],
+    see:'Viền nét đứt, glyph vòng đứt, <b>status unknown</b>, không còn đồng hồ.', why:'Agent đã đóng và sẽ không có thông báo kết thúc. Một đồng hồ đếm hàng giờ sẽ nói dối.' },
+  { title:'Bạn dừng agent giữa lúc chạy', steps:[R({target:'npm run e2e',status:'canceled'})],
+    see:'Lệnh bị gạch ngang, icon Ban. Không còn spinner hay đồng hồ.', why:'Giữ cách hiển thị hiện tại. Policy ghi rõ tiến trình thật có thể còn chạy sau khi dừng, và UI không nói thêm.' },
+  { title:'Xong nhanh', steps:[R({target:'npm run lint',status:'done'})],
+    see:'<b>Ran</b> và dấu check. Không có thời gian.', why:'Giữ danh sách turn đã xong gọn.' },
+  { title:'Lỗi nhanh', steps:[R({target:'ls /nonexistent',status:'failed',meta:'exit 1'})],
+    see:'Viền đỏ, chữ đỏ, <b>exit 1</b> và dấu X.', why:'Nhìn qua là thấy lỗi nhờ chữ, icon và màu đi cùng nhau.' },
+  { title:'Lệnh chạy hơn 1 giờ', steps:[R({target:'npm run seed',status:'running',mode:'bg',elapsed:4503})],
+    see:'<b>In background · 1h 15m</b>.', why:'Gọn hơn <code>75m 03s</code> và vẫn đủ để biết quy mô.' },
+  { title:'Mở lại giữa lúc lệnh đang chạy', steps:[R({target:'npm test',status:'running',mode:'fg',elapsed:69})],
+    see:'Đồng hồ vẫn đúng (<b>1m 09s</b>) sau khi reload.', why:'Spike: kết nối mới giữa lúc chạy vẫn nhận timestamp lúc bắt đầu.' },
+  { title:'Turn đã xong, đọc lướt', steps:[{act:'read',target:'package.json',status:'done'},{act:'search',target:'formatDate',status:'done',meta:'6 matches'},{act:'edit',target:'src/date.ts',status:'done',meta:'+3 −1'},R({target:'npm test',status:'failed',meta:'exit 1',total:182}),{act:'edit',target:'src/date.ts',status:'done',meta:'+1 −1'},R({target:'npm test',status:'done',total:175}),R({target:'npm run lint',status:'done'})],
+    see:'Mỗi bước một dòng. Chỉ hai lần chạy test chậm có thời gian, và chỉ bước lỗi có màu đỏ.', why:'Màu và chữ thêm chỉ xuất hiện ở bước cần chú ý, đúng nguyên tắc "Calm over loud".' },
+];
+function renderScenarios(){
+  document.getElementById('scenarios').innerHTML = SCENARIOS.map((sc) => {
+    const runSecs = 9 + (sc.steps.reduce((a, s) => Math.max(a, s.elapsed ?? s.total ?? 2), 0));
+    return `<section class="scn"><div><h3>${sc.title}</h3><p><b>Thấy:</b> ${sc.see}</p><p><b>Vì sao:</b> ${sc.why}</p></div>
+      <div><div class="colhead">BRIEF</div><div class="view">${sc.steps.map(chip).join('')}</div></div>
+      <div><div class="colhead">STEPS</div><div class="view">${stepsList(sc.steps, runSecs)}</div></div></section>`;
+  }).join('');
+}
+
+/* ---------- toggles ---------- */
+function setSeg(key, v){
+  state[key] = v;
+  if (key === 'path' && v !== 'bg' && state.outcome === 'unknown') state.outcome = 'done';
+  if (key === 'path' || key === 'outcome') state.t = Math.min(state.t, 230);
+  document.querySelectorAll('.seg[data-key]').forEach((seg) => {
+    seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === state[seg.dataset.key])));
+  });
+  document.body.className = `t-${state.theme}${state.layout === 'compact' ? ' compact' : ''}`;
+  renderLive(); renderScenarios();
+}
+document.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (seg.dataset.key === 'path' || seg.dataset.key === 'outcome') stopTimer();
+  setSeg(seg.dataset.key, b.dataset.v);
+}));
+setSeg('theme', 'dark');
+</script>
+</body>
+</html>

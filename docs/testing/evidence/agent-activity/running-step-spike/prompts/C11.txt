@@ -1,0 +1,1 @@
+Use the Task tool to spawn one sub-agent whose only job is to run the Bash command 'sleep 30; echo sub-done' and report its output. Do not run the command yourself. Then reply OK.

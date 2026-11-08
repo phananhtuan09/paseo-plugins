@@ -32,7 +32,7 @@ Plugins are shaped around one person's real supervision habits across three diff
 - Plugin UI uses React Native primitives only (`View`, `Text`, `Pressable`, `ScrollView`, `TextInput`) plus components from `@getpaseo/plugin/client/ui`.
 - All colors come from the active Paseo theme (`theme.colors`), so plugins follow light, dark, and plugin-contributed themes.
 - Plugins are trusted, unsandboxed code; no remote services unless a plugin explicitly needs one.
-- `requirements.paseo` must include Paseo 0.13.x; the owner currently runs 0.15.0.
+- `requirements.paseo` must include Paseo 0.13.x; the owner currently runs 0.15.x.
 
 ## Brand Commitments
 

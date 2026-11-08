@@ -1,0 +1,1 @@
+Use the Bash tool exactly once with command "i=0; while [ $i -lt 40 ]; do sleep 5; i=$((i+1)); done; echo finished" and set the timeout parameter to 130000. Run no other tool. After it finishes reply OK.
