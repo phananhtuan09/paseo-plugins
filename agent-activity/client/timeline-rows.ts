@@ -1,5 +1,6 @@
 import type { ActivityStep } from "../shared/activity.ts";
 import { classifyReasoning, classifyToolCall } from "./classify.ts";
+import { deriveRunning, type Live } from "./running.ts";
 import { type SegmentInfo, type SegmentRow, rowStartMs } from "./segments.ts";
 
 /** Key that links a rendered step to its row: tool call id, or the activity and timestamp when there is none. */
@@ -13,7 +14,20 @@ interface TimelineRow extends SegmentRow {
   kind: "user" | "assistant" | "step" | "other";
   turnId?: string;
   step?: ActivityStep;
+  /** Set for a running step and for a command that ran in the background. */
+  live?: Live;
 }
+
+/** What the store knows about permissions and the agent; none of it is in the timeline entries. */
+export interface RowContext {
+  /** Tool call ids whose permission request is unanswered. */
+  waiting: ReadonlySet<string>;
+  /** When this client saw the user answer, by tool call id. */
+  approvedAt: ReadonlyMap<string, number>;
+  agentClosed: boolean;
+}
+
+const NO_CONTEXT: RowContext = { waiting: new Set(), approvedAt: new Map(), agentClosed: false };
 
 export interface AgentTimelineState {
   segments: ReadonlyMap<string, SegmentInfo>;
@@ -28,8 +42,9 @@ export interface RawEntry {
   timestamp: string;
 }
 
-export function buildRows(entries: readonly RawEntry[], turnRunning: boolean): TimelineRow[] {
+export function buildRows(entries: readonly RawEntry[], turnRunning: boolean, context: RowContext = NO_CONTEXT): TimelineRow[] {
   const rows: TimelineRow[] = [];
+  const notifications = notificationsByCall(entries);
   let before: number | undefined;
   const latest = new Map<string, number>();
   let activeStart = 0;
@@ -58,13 +73,43 @@ export function buildRows(entries: readonly RawEntry[], turnRunning: boolean): T
     }
     if (result === null) continue; // hidden rows render nothing
     if (result) {
-      rows.push({ key: stepKey(result, entry.timestamp), time, kind: "step", step: result, before: previous, turnId: entry.turnId });
+      const callId = result.callId;
+      const live = deriveRunning(result, {
+        timeMs: time,
+        notification: callId ? notifications.get(callId) : undefined,
+        waiting: callId !== undefined && context.waiting.has(callId),
+        approvedAtMs: callId ? context.approvedAt.get(callId) : undefined,
+        agentClosed: context.agentClosed,
+      });
+      const step = live ? withLive(result, live) : result;
+      rows.push({ key: stepKey(result, entry.timestamp), time, kind: "step", step, live, before: previous, turnId: entry.turnId });
     } else {
       const kind = (item.type === "user_message" || entry.item.name === "agent_message") ? "user" : item.type === "assistant_message" ? "assistant" : "other";
       rows.push({ key: `${kind}:${time}:${rows.length}`, time, kind, before: previous, turnId: entry.turnId });
     }
   }
   return rows;
+}
+
+/** A command in the background is still running, and one that ended there takes the outcome its notification reports. */
+function withLive(step: ActivityStep, live: Live): ActivityStep {
+  if (live.kind === "bg") return { ...step, status: "running" };
+  if (live.kind !== "bgdone") return step;
+  if (live.ok) return step;
+  return { ...step, status: "failed", meta: live.exitCode !== undefined ? `exit ${live.exitCode}` : "failed" };
+}
+
+/** `task_notification` entries are hidden, but they end background commands; they link to their step by `metadata.toolUseId`. */
+function notificationsByCall(entries: readonly RawEntry[]): Map<string, { timeMs: number; text: string }> {
+  const result = new Map<string, { timeMs: number; text: string }>();
+  for (const entry of entries) {
+    const item = entry.item as { type: string; name?: unknown; detail?: { text?: unknown }; metadata?: { toolUseId?: unknown } };
+    if (item.type !== "tool_call" || item.name !== "task_notification") continue;
+    const toolUseId = item.metadata?.toolUseId;
+    if (typeof toolUseId !== "string") continue;
+    result.set(toolUseId, { timeMs: Date.parse(entry.timestamp), text: typeof item.detail?.text === "string" ? item.detail.text : "" });
+  }
+  return result;
 }
 
 export type FollowState =

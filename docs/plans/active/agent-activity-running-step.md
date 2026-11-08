@@ -222,12 +222,12 @@ Phần mới là một lớp suy ra trạng thái thuần, một đồng hồ ch
 Mỗi mốc chạy được và kiểm được riêng.
 Đánh dấu `[x]` khi mốc đã làm xong và kiểm xong.
 
-- [ ] Mốc 0 · commit thứ nhất trên nhánh làm việc: policy, mockup, plan này và bằng chứng spike. Commit implement làm sau (quyết định vòng 5, câu 3).
-- [ ] Mốc 1 · nền: `formatDuration` có giờ, trường `background` và `denied` ở `classify.ts`, `running.ts` cùng test bằng fixture spike.
-- [ ] Mốc 2 · store: gom `task_notification`, xử lý event quyền, đọc `agent.pendingPermissions` và `agent.status`, `live` trên hàng. Xác nhận hình dạng `pendingPermissions` bằng một lần refetch lúc đang chờ quyền.
-- [ ] Mốc 3 · đồng hồ chung `clock.ts` và component `Elapsed`, thay `useNow` và `useElapsed`.
-- [ ] Mốc 4 · hiển thị: bốn trạng thái mới ở Brief và Steps, accessibility, kiểm icon, ảnh so với mockup.
-- [ ] Mốc 5 · README (hành vi, bước kiểm, giới hạn), E2E và demo cho từng tình huống, cài lên daemon local và kiểm trạng thái `running`.
+- [x] Mốc 0 · commit thứ nhất trên nhánh làm việc: policy, mockup, plan này và bằng chứng spike. Commit implement làm sau (quyết định vòng 5, câu 3).
+- [x] Mốc 1 · nền: `formatDuration` có giờ, trường `background` và `denied` ở `classify.ts`, `running.ts` cùng test bằng fixture spike.
+- [ ] Mốc 2 · store: gom `task_notification`, xử lý event quyền, đọc `agent.pendingPermissions` và `agent.status`, `live` trên hàng. Đã code và có unit test; còn phải xác nhận hình dạng `pendingPermissions` bằng một lần refetch lúc đang chờ quyền (cần cài lại plugin lên daemon E2E).
+- [x] Mốc 3 · đồng hồ chung `clock.ts` và component `Elapsed`, thay `useNow` và `useElapsed`.
+- [ ] Mốc 4 · hiển thị: bốn trạng thái mới ở Brief và Steps, accessibility, kiểm icon, ảnh so với mockup. Đã code, typecheck sạch; chưa xem trên trình duyệt, chưa kiểm tên icon `Layers`, `ShieldAlert`, `CircleDashed`.
+- [ ] Mốc 5 · README (đã cập nhật), còn lại: E2E và demo cho từng tình huống, cài lên daemon local và kiểm trạng thái `running`.
 
 ## Rủi ro và chỗ chưa chắc
 

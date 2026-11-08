@@ -38,6 +38,17 @@ export const activityStepSchema = z.object({
   command: z.string().optional(),
   body: stepBodySchema.optional(),
   errorText: z.string().optional(),
+  /** Set when a shell command was moved to the background, by timeout or by `run_in_background`. */
+  background: z
+    .object({
+      id: z.string(),
+      kind: z.enum(["timeout", "requested"]),
+      /** Timeout that moved the command, when the output says so. */
+      timeoutSec: z.number().int().positive().optional(),
+    })
+    .optional(),
+  /** The user denied the permission request for this step. */
+  denied: z.boolean().optional(),
 });
 
 export type Activity = z.infer<typeof activitySchema>;
