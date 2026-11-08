@@ -286,7 +286,7 @@ Hướng đã chốt là **Flow**, mockup tương tác ở `docs/mockups/agent-a
 - Chưa biết plugin có cuộn được timeline tới một item không; nếu không, chạm pill theo dõi không làm gì.
 - Chưa biết plugin có chỗ lưu cục bộ cho mức chi tiết không.
 - Phân pha theo loại tool là ước lượng: lệnh không phải test vẫn tính là Verify.
-- Tool đặc thù của OMP và tool MCP có thể rơi vào `unknown` và hiện là `tool`; ghi bảng ánh xạ quan sát được vào `docs/observed/agent-activity.md`.
+- Tool đặc thù của OMP và tool MCP có thể rơi vào `unknown` và hiện là `tool`; bảng ánh xạ quan sát được nằm trong kế hoạch này, không ghi thành tài liệu bền vững.
 - Codex và OMP cần được cài và đăng nhập để E2E đủ ba provider; hiện mới chứng minh được Claude trên daemon E2E.
 - Thay `tool_call` có thể làm mất nhóm tool của Overview mode; nếu xảy ra, ghi lại làm giới hạn đã biết.
 
