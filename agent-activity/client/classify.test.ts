@@ -225,3 +225,31 @@ test("Codex failed shell uses structured exitCode before generic error text", ()
   const result = step(tool({ status: "failed", name: "shell", error: { message: "Tool call failed" }, detail: { type: "shell", command: "ls /missing", exitCode: 1, output: "missing" } }));
   assert.equal(result.meta, "exit 1");
 });
+
+test("shell output that says the command moved to the background is recorded", () => {
+  const shell = (output: string) =>
+    classifyToolCall(
+      { type: "tool_call", callId: "c", name: "Bash", status: "completed", error: null, detail: { type: "shell", command: "loop", output } } as never,
+      "complete",
+    );
+  assert.deepEqual(shell("tick\nCommand did not complete within its 120s timeout and was moved to the background (ID: bsme5r4x2). Output is being written to: /tmp/x.output. You will be notified when it completes.")?.background, {
+    id: "bsme5r4x2",
+    kind: "timeout",
+    timeoutSec: 120,
+  });
+  assert.deepEqual(
+    shell("Command running in background with ID: b37ba1r8p. Output is being written to: /tmp/x. You will be notified when it completes.")?.background,
+    { id: "b37ba1r8p", kind: "requested" },
+  );
+  assert.equal(shell("all good")?.background, undefined);
+  assert.equal(shell("moved to the background mentioned mid-text\nand more")?.background, undefined);
+});
+
+test("a denied permission is a failed step with the denied label", () => {
+  const step = classifyToolCall(
+    { type: "tool_call", callId: "c", name: "Bash", status: "failed", error: { content: "Permission request denied" }, detail: { type: "shell", command: "touch x" } } as never,
+    "complete",
+  );
+  assert.equal(step?.denied, true);
+  assert.equal(step?.meta, "denied");
+});

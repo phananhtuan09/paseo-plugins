@@ -8,6 +8,16 @@ It adds two composer pills: a follow pill showing what the agent is doing now, a
 - Full: every step is open, with file content, diffs, output and the full shell command.
   Shell commands, and the content of `ts`, `tsx`, `js`, `json`, `py`, `sh`, `yaml` and `toml` files, are syntax highlighted.
 
+At Brief and Steps a running step also shows what the user needs to decide whether to wait (policy: `RUNNING-STEP-POLICY.md`):
+
+- A running command shows a clock that counts up from its start, one per step.
+- `Waiting for approval` (amber, with no clock) while a permission request is unanswered; after approval the clock starts again.
+- `In background · 3m 20s` (dashed border) for a Claude Code command moved to the background by its timeout or `run_in_background`.
+  It ends as `Ran` with its total time, or `exit N · 3m 22s` in red, when Claude Code's completion notification arrives (`killed` in red if the command was stopped, for example by a daemon restart).
+  `status unknown` appears if the agent closed before that notification.
+- A denied permission request shows `denied` in red.
+- Times from one hour show as `1h 15m`.
+
 The chosen level is kept in the browser (`localStorage`) and applies to every agent.
 Answers and user messages keep Paseo's default rendering.
 
@@ -57,6 +67,9 @@ Confirm the following:
 - The composer shows a short follow pill (the phase, then `Done`; hover for the full step and step count) and a pill with only the Detail level (`Brief`, `Steps` or `Full`).
 - Tapping the Detail pill cycles Brief, Steps and Full, and every step changes with it.
 - At Steps, each run has a header with its step count and duration, and a phase label sits above each phase.
+- A command that runs for a few seconds shows a clock at Brief and Steps.
+  In an agent in `default` mode, a command that needs approval shows `Waiting for approval` until you allow or deny it.
+  A command that runs past Claude Code's 120 s timeout shows `In background` and ends with its total time.
 - At Full, a shell step shows its full command highlighted, and a read of a `.ts` file shows highlighted code.
 
 Unit tests (`npm test`) cover the step classifier, run and phase grouping, the highlighter and the palette.
@@ -76,6 +89,11 @@ Pass the agent id as `E2E_AGENT_ID` and the directory name as `E2E_WORKSPACE_NAM
   This changes activity display only: Paseo/Codex may let the shell process finish after Stop, and a late result then replaces the stopped row.
 - Brief, Steps and Full share the latest 200 timeline entries for status reconciliation and headers.
 - The phase and code colors are fixed blue, amber and violet with a dark and a light variant, chosen from the theme's brightness; they do not follow custom theme accents.
+
+- Whether a command is still printing output is not shown: Claude Code gives a Bash command's output only when it finishes.
+- `In background` depends on Claude Code's wording in the command output (`moved to the background`, `Command running in background`); if it changes, the step shows `Ran` as before.
+- After reloading the page while a command waits for approval, the clock after approval counts from the request, because the approval time is not recorded.
+- Commands inside a sub-agent are not in the timeline, and `canceled` does not say whether the process is still running.
 
 ## Troubleshoot
 

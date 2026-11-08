@@ -1,0 +1,1 @@
+Step 1: call the Bash tool with run_in_background set to true and command 'sleep 30; echo bg-done'. Step 2: call Bash with command 'sleep 35'. Step 3: read the background shell output with the BashOutput tool. Then reply OK. Do not set the timeout parameter.
