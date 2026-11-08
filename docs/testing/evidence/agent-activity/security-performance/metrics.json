@@ -1,0 +1,177 @@
+{
+ "results": [
+  {
+   "side": "base",
+   "lcp": 748,
+   "cls": 0.2226,
+   "tbt": 493,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "base"
+  },
+  {
+   "side": "head",
+   "lcp": 780,
+   "cls": 0.2222,
+   "tbt": 516,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "head"
+  },
+  {
+   "side": "base",
+   "lcp": 744,
+   "cls": 0.2222,
+   "tbt": 486,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "base2"
+  },
+  {
+   "side": "base",
+   "lcp": 772,
+   "cls": 0.2222,
+   "tbt": 516,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "base"
+  },
+  {
+   "side": "head",
+   "lcp": 764,
+   "cls": 0.2222,
+   "tbt": 500,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "head"
+  },
+  {
+   "side": "base",
+   "lcp": 784,
+   "cls": 0.2222,
+   "tbt": 516,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "base2"
+  },
+  {
+   "side": "base",
+   "lcp": 760,
+   "cls": 0.2222,
+   "tbt": 502,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "base"
+  },
+  {
+   "side": "head",
+   "lcp": 792,
+   "cls": 0.2222,
+   "tbt": 518,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "head"
+  },
+  {
+   "side": "base",
+   "lcp": 820,
+   "cls": 0.2222,
+   "tbt": 564,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "base2"
+  },
+  {
+   "side": "base",
+   "lcp": 856,
+   "cls": 0.2222,
+   "tbt": 590,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "base"
+  },
+  {
+   "side": "head",
+   "lcp": 808,
+   "cls": 0.2222,
+   "tbt": 558,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "head"
+  },
+  {
+   "side": "base",
+   "lcp": 832,
+   "cls": 0.2222,
+   "tbt": 584,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "base2"
+  },
+  {
+   "side": "base",
+   "lcp": 796,
+   "cls": 0.2222,
+   "tbt": 542,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "base"
+  },
+  {
+   "side": "head",
+   "lcp": 816,
+   "cls": 0.2222,
+   "tbt": 552,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "head"
+  },
+  {
+   "side": "base",
+   "lcp": 804,
+   "cls": 0.2222,
+   "tbt": 521,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": null,
+   "label": "base2"
+  }
+ ],
+ "exact": {
+  "base": {
+   "side": "base",
+   "lcp": 948,
+   "cls": 0.2222,
+   "tbt": 505,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": 1
+  },
+  "head": {
+   "side": "head",
+   "lcp": 948,
+   "cls": 0.2222,
+   "tbt": 498,
+   "longTasks": 5,
+   "requests": 4,
+   "bgReqs": 1
+  }
+ },
+ "tools": {
+  "node": "v22.20.0"
+ }
+}

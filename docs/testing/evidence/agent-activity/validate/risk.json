@@ -1,0 +1,75 @@
+{
+  "schema": "validate-change/risk@1",
+  "base": "main",
+  "baseSha": "4c5c34bbb90cc4d5bf35932c402240925a3ecc33",
+  "headSha": "9916499af83161d9946645aadeda9827a0b40eab",
+  "worktree": false,
+  "untracked": [],
+  "rulesDigest": "9951edd8ece4c65d0e3a9ad4c50e2778f42bc89f8867fdfb2396907891a3a925",
+  "files": 20,
+  "lines": 1634,
+  "signals": [
+    {
+      "rule": "ci-path",
+      "level": "high",
+      "what": "A CI workflow or code-owner rule.",
+      "count": 1,
+      "hits": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "rule": "size",
+      "level": "gate",
+      "what": "The change is larger than `max-lines` changed lines or `max-files` files.",
+      "count": 1,
+      "hits": [
+        "1634 changed lines, 20 files (limits 500 lines, 25 files)"
+      ]
+    }
+  ],
+  "separateTests": [
+    {
+      "area": "security",
+      "signal": "authz-route: agent-activity/client/classify.ts",
+      "command": "/security-performance-check security"
+    },
+    {
+      "area": "performance",
+      "signal": "request-count: agent-activity/client/agent-timeline.ts +6",
+      "command": "/security-performance-check performance"
+    },
+    {
+      "area": "performance",
+      "signal": "bundle-size: agent-activity/client/activity-meta.ts +10",
+      "command": "/security-performance-check performance"
+    },
+    {
+      "area": "performance",
+      "signal": "background-requests: agent-activity/client/agent-timeline.ts +2",
+      "command": "/security-performance-check performance"
+    },
+    {
+      "area": "performance",
+      "signal": "response-time: agent-activity/client/agent-timeline.ts +7",
+      "command": "/security-performance-check performance"
+    },
+    {
+      "area": "performance",
+      "signal": "lcp: agent-activity/client/step-bodies.tsx +1",
+      "command": "/security-performance-check performance"
+    },
+    {
+      "area": "performance",
+      "signal": "cls: agent-activity/client/step-bodies.tsx +1",
+      "command": "/security-performance-check performance"
+    },
+    {
+      "area": "performance",
+      "signal": "long-tasks: agent-activity/client/agent-timeline.ts +6",
+      "command": "/security-performance-check performance"
+    }
+  ],
+  "gate": "required",
+  "audit": "required"
+}
