@@ -15,7 +15,7 @@ Preflight verified on 2026-11-04 (Paseo 0.15.0, Playwright 1.64.1): the E2E daem
 ## Project shape
 
 This repository is a collection of Paseo plugins, one directory per plugin (see `AGENTS.md` and
-`docs/patterns/plugin-directory-layout.md`).
+the "Plugin directory layout" entry in `docs/DECISIONS.md`).
 A plugin has no app of its own: its client code runs inside the Paseo app and its server code runs
 as a daemon subprocess.
 Runtime E2E therefore drives the **Paseo web UI served by an isolated E2E daemon** with the plugin

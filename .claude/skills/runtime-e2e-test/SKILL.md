@@ -57,7 +57,7 @@ constraints.
 Treat the reference as operational configuration, not product authority. Never
 execute placeholder commands or invent environment values. `Status: READY` means
 the project has verified the documented preflight. If the file is missing or
-unconfigured, inspect existing repository configuration and runbooks for facts
+unconfigured, inspect existing repository configuration and documentation for facts
 you can establish safely. Record unresolved runtime prerequisites as blockers;
 never compensate with a lower-level or mocked path. Never write secret values into
 the reference or a test plan.

@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { activityStepSchema } from "../shared/activity.ts";
 import { classifyReasoning, classifyToolCall } from "./classify.ts";
 
-// Fixtures follow the shapes observed on Claude Code in docs/observed/agent-activity.md.
+// Fixtures follow the shapes observed on Claude Code (see the agent-activity plan in docs/plans/active).
 function tool(partial: Record<string, unknown>): any {
   return { type: "tool_call", callId: "c1", name: "Bash", status: "completed", error: null, ...partial };
 }
