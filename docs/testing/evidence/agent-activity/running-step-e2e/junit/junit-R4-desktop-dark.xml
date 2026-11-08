@@ -1,0 +1,6 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="12.743735000000001">
+<testsuite name="activity.spec.ts" timestamp="2026-11-08T14:29:33.220Z" hostname="desktop" tests="1" failures="0" skipped="0" time="12.383" errors="0">
+<testcase name="@R4 live: stopping the agent shows the step as canceled with no clock" classname="activity.spec.ts" time="12.383">
+</testcase>
+</testsuite>
+</testsuites>
