@@ -242,9 +242,11 @@ function LiveText({ live, style, warning }: { live: Live; style: object; warning
   const startMs = live.kind === "fg" || live.kind === "bg" ? live.startMs : undefined;
   const now = useClock(startMs !== undefined);
   const elapsed = startMs !== undefined ? formatDuration(now - startMs) : undefined;
-  if (live.kind === "wait") return <Text style={[style, { color: warning }]}>Waiting for approval</Text>;
-  if (live.kind === "unknown") return <Text style={style}>status unknown</Text>;
-  if (live.kind === "bg") return <Text style={style}>{elapsed ? `In background · ${elapsed}` : "In background"}</Text>;
-  if (live.kind === "fg") return <Text style={style}>{elapsed}</Text>;
+  // The state text never wraps or shrinks; the command target gives way instead.
+  const fixed = [style, { flexShrink: 0 }];
+  if (live.kind === "wait") return <Text numberOfLines={1} style={[...fixed, { color: warning }]}>Waiting for approval</Text>;
+  if (live.kind === "unknown") return <Text numberOfLines={1} style={fixed}>status unknown</Text>;
+  if (live.kind === "bg") return <Text numberOfLines={1} style={fixed}>{elapsed ? `In background · ${elapsed}` : "In background"}</Text>;
+  if (live.kind === "fg") return <Text numberOfLines={1} style={fixed}>{elapsed}</Text>;
   return null;
 }

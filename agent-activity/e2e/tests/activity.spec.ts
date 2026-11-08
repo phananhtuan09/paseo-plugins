@@ -119,3 +119,46 @@ test("@K8 answers and user messages keep Paseo's default rendering", async ({ pa
   await expect(page.getByText("OK", { exact: true }).first()).toBeVisible();
   await checkpoint(info, "defaults", { userMessage: true, answer: true });
 });
+
+// The two cases below need an agent in `default` mode so Bash asks for permission.
+test("@R1 live: a command waiting for approval shows Waiting for approval, then a clock after Allow", async ({ page }, info) => {
+  test.skip(process.env.E2E_LIVE !== "1" || info.project.name !== "desktop", "consumes an agent turn; opt in with E2E_LIVE=1");
+  await openAgent(page);
+  await setLevel(page, "Brief");
+  execFile("paseo", ["send", agentId, "Run the shell command `touch r1.txt && sleep 6 && echo done` and then reply with the single word DONE.", "--home", home], () => {});
+  const waiting = page.getByRole("button", { name: /^Running touch r1\.txt.*, waiting for approval, collapsed$/ }).last();
+  await expect(waiting).toBeVisible({ timeout: 60_000 });
+  await expect(waiting).toContainText("Waiting for approval");
+  await expect(waiting).not.toContainText(/\d+s/);
+  await shot(page, info, "waiting");
+  await page.waitForTimeout(3000);
+  execFile("paseo", ["permit", "allow", agentId, "--all", "--home", home], () => {});
+  const running = page.getByRole("button", { name: /^Running touch r1\.txt.*, running, collapsed$/ }).last();
+  await expect(running).toBeVisible({ timeout: 20_000 });
+  await expect(running).toHaveText(/\d+s$/);
+  await shot(page, info, "approved");
+  await expect(page.getByRole("button", { name: /^Ran touch r1\.txt.*, done, collapsed$/ }).last()).toBeVisible({ timeout: 30_000 });
+});
+
+test("@R2 live: a command moved to the background shows In background with a clock, then its total time", async ({ page }, info) => {
+  test.skip(process.env.E2E_LIVE !== "1" || info.project.name !== "desktop", "consumes an agent turn; opt in with E2E_LIVE=1");
+  await openAgent(page);
+  await setLevel(page, "Steps");
+  const stamp = String(Date.now());
+  const command = `: r2-${stamp}; i=0; while [ $i -lt 30 ]; do sleep 1; i=$((i+1)); done; echo finished-r2`;
+  execFile("paseo", ["send", agentId, `Run this exact Bash command with the timeout parameter set to 5000: ${command} . Then reply with the single word DONE.`, "--home", home], () => {});
+  const allow = setInterval(() => execFile("paseo", ["permit", "allow", agentId, "--all", "--home", home], () => {}), 1500);
+  try {
+    const background = page.getByRole("button", { name: new RegExp(`r2-${stamp}.*in background, collapsed$`) });
+    await expect(background).toBeVisible({ timeout: 60_000 });
+    await expect(background).toContainText(/In background · \d+s/);
+    await shot(page, info, "background");
+    const ended = page.getByRole("button", { name: new RegExp(`^Ran : r2-${stamp}.*, done, collapsed$`) });
+    await expect(ended).toBeVisible({ timeout: 90_000 });
+    await expect(ended).toContainText(/\d+s/);
+    await checkpoint(info, "background", { ended: await ended.innerText() });
+    await shot(page, info, "background-done");
+  } finally {
+    clearInterval(allow);
+  }
+});
