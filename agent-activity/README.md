@@ -8,7 +8,7 @@ It adds two composer pills: a follow pill showing what the agent is doing now, a
 - Full: every step is open, with file content, diffs, output and the full shell command.
   Shell commands, and the content of `ts`, `tsx`, `js`, `json`, `py`, `sh`, `yaml` and `toml` files, are syntax highlighted.
 
-At Brief and Steps a running step also shows what the user needs to decide whether to wait (policy: `RUNNING-STEP-POLICY.md`):
+At Brief and Steps a running step also shows what the user needs to decide whether to wait:
 
 - A running command shows a clock that counts up from its start, one per step.
 - `Waiting for approval` (amber, with no clock) while a permission request is unanswered; after approval the clock starts again.
@@ -73,7 +73,7 @@ Confirm the following:
 - At Full, a shell step shows its full command highlighted, and a read of a `.ts` file shows highlighted code.
 
 Unit tests (`npm test`) cover the step classifier, run and phase grouping, the highlighter and the palette.
-Automated runtime E2E lives in `e2e/` and runs against an isolated E2E daemon, never your own; follow `.claude/skills/runtime-e2e-test/references/project-runtime.md` at the repository root.
+Automated runtime E2E lives in `docs/testing/suites/agent-activity/` and runs against an isolated E2E daemon, never your own; follow `.claude/skills/runtime-e2e-test/references/project-runtime.md` at the repository root.
 Its fixture needs one agent whose turns are, in order: reply `OK`, read and edit `notes.txt` and run a failing `ls /nonexistent-e2e-path`, then run `sleep 8 && echo done` twice, in a directory that is not a git repository.
 Pass the agent id as `E2E_AGENT_ID` and the directory name as `E2E_WORKSPACE_NAME`.
 

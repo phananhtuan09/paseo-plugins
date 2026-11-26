@@ -5,7 +5,7 @@ Kế hoạch này là phần mở rộng của `docs/plans/active/agent-activity
 
 ## Tài liệu liên quan
 
-- Chính sách (nguồn ý định, coding agent phải làm theo): `agent-activity/RUNNING-STEP-POLICY.md`.
+- Chính sách (nguồn ý định, coding agent phải làm theo): `docs/policies/agent-activity/running-step.md`.
 - Mockup UI đã chốt: `docs/mockups/agent-activity/running-step.html`.
   Mockup cho thấy từng trạng thái ở Brief và Steps, theme sáng và tối, desktop và mobile.
   Phần chạy thử trong mockup đi qua ba đường: lệnh ngắn, quá 120s vào nền, chờ cấp quyền.
@@ -214,7 +214,7 @@ Phần mới là một lớp suy ra trạng thái thuần, một đồng hồ ch
   - mất dấu: dừng và khởi động lại daemon E2E giữa lúc một lệnh nền đang chạy;
   - mở lại giữa lúc chạy: tải lại trang khi lệnh đang chạy.
 - Runtime E2E Playwright trên daemon E2E cô lập theo `.claude/skills/runtime-e2e-test/references/project-runtime.md`.
-  Thêm vào `agent-activity/e2e/` các case chờ quyền và vào nền (dùng `timeout` nhỏ). Chụp ảnh desktop và compact, theme sáng và tối.
+  Thêm vào `docs/testing/suites/agent-activity/` các case chờ quyền và vào nền (dùng `timeout` nhỏ). Chụp ảnh desktop và compact, theme sáng và tối.
 - Tắt plugin thì Paseo về cách hiển thị mặc định, và Full không đổi.
 
 ## Thứ tự làm

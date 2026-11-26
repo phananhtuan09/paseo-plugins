@@ -8,7 +8,7 @@ Bằng chứng cho `docs/plans/active/agent-activity-running-step.md`, mốc 4 v
 - Daemon E2E cô lập: home `/tmp/paseo-e2e-home`, cổng 6801, daemon 0.15.3. Daemon của chủ dự án (cổng 6767) không bị đụng tới.
 - Plugin `agent-activity` cài từ thư mục này, trạng thái `running`.
 - Claude Code 2.1.319, agent Haiku 5.5, mode `default` (Bash hỏi quyền).
-- Playwright 1.64.1, Chromium. Test: `agent-activity/e2e/tests/activity.spec.ts`, các case `@R1` đến `@R6`, bật bằng `E2E_LIVE=1`.
+- Playwright 1.64.1, Chromium. Test: `docs/testing/suites/agent-activity/tests/activity.spec.ts`, các case `@R1` đến `@R6`, bật bằng `E2E_LIVE=1`.
 
 ## Kết quả
 

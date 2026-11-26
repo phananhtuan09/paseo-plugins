@@ -53,6 +53,7 @@ Không tín hiệu nào chỉ dựa vào màu: mỗi trạng thái có glyph và
 | Vào nền (quá timeout hoặc `run_in_background`) | Viền nét đứt, glyph chồng lớp, `In background · 3m 20s`, đồng hồ tiếp tục | Tiến trình vẫn chạy, hiện `Ran ✓` sẽ sai |
 | Nền kết thúc tốt | `Ran` kèm check và tổng thời gian (`3m 22s`) | Bước chậm giữ dấu vết khi đọc lại turn |
 | Nền kết thúc lỗi | `exit N · 3m 22s` màu đỏ, dấu X | Nhìn qua là thấy lỗi, và biết lệnh hỏng sau bao lâu |
+| Nền bị kill (thông báo `killed`, ví dụ sau restart daemon) | `killed · 3m 22s` màu đỏ, dấu X | Không có exit code, vẫn là bước lỗi và cho biết đã chạy bao lâu |
 | Nền mất dấu | Viền nét đứt, glyph vòng đứt, `status unknown`, không đồng hồ | Agent đã đóng nên sẽ không có thông báo, đồng hồ đếm mãi là nói dối |
 | Xong thường | `Ran` kèm check, không có thời gian | Giữ turn đã xong gọn |
 | Lỗi thường | `exit N` màu đỏ, dấu X | Giữ nguyên hiện tại |
@@ -106,6 +107,7 @@ Tiêu chí thay thế: không cần click, người dùng biết lệnh đã ch�
 ## Giới hạn đã biết
 
 - Không biết lệnh còn in output hay không, và không biết timeout của từng lệnh.
+- Sau khi reload trang, bước đã được duyệt đếm từ lúc xin quyền chứ không từ lúc duyệt, vì thời điểm duyệt chỉ client thấy trực tiếp mới biết.
 - Khi bị dừng, nhãn `canceled` không nói được tiến trình còn chạy hay không.
 - Sub-agent: lệnh treo bên trong nó không bao giờ được nhìn thấy.
 - Bước vào nền chỉ biết kết thúc khi `task_notification` đến. Nếu không đến thì hiện `status unknown` khi agent đã đóng.
