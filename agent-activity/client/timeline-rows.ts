@@ -139,7 +139,8 @@ export function followState(state: AgentTimelineState): FollowState {
   const { rows } = state;
   const turn = currentTurn(rows);
   if (state.running) {
-    const running = turn.filter((row) => row.step?.status === "running");
+    // A command in the background is not what the agent is doing now, so the follow pill skips it.
+    const running = turn.filter((row) => row.step?.status === "running" && row.live?.kind !== "bg");
     const latest = running[running.length - 1];
     if (latest?.step) return { kind: "step", step: latest.step, startMs: latest.time };
     const last = turn[turn.length - 1];

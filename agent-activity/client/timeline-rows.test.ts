@@ -66,6 +66,16 @@ test("a step waiting for a permission request is marked waiting, then counts fro
   assert.deepEqual(approved, { kind: "fg", startMs: 9000 });
 });
 
+test("the follow pill ignores a command in the background and follows the agent's current step", () => {
+  const entries = [shell("t1", "completed", 125_000, MOVED), shell("t2", "completed", 130_000, "done")];
+  const rows = buildRows(entries, true);
+  assert.equal(rows[0].live?.kind, "bg");
+  assert.equal(followState({ rows, segments: new Map(), loaded: true, running: true }).kind, "working");
+  const next = buildRows([...entries, shell("t3", "running", 140_000)], true);
+  const follow = followState({ rows: next, segments: new Map(), loaded: true, running: true });
+  assert.equal(follow.kind === "step" && follow.step.callId, "t3");
+});
+
 test("a command moved to the background stays running until its notification ends it", () => {
   const entries = [shell("t1", "completed", 125_000, MOVED)];
   const open = buildRows(entries, false)[0];
