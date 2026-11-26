@@ -1,0 +1,6 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="21.871299">
+<testsuite name="activity.spec.ts" timestamp="2026-11-08T14:36:59.758Z" hostname="compact" tests="1" failures="0" skipped="0" time="21.424" errors="0">
+<testcase name="@R5 live: reloading the page mid-run keeps the clock" classname="activity.spec.ts" time="21.424">
+</testcase>
+</testsuite>
+</testsuites>

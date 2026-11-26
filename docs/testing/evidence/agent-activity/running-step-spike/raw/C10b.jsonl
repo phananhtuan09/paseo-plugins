@@ -1,0 +1,61 @@
+{"t":1794132169099,"kind":"live","event":{"type":"thread_started"}}
+{"t":1794132169099,"kind":"refetch","entries":[]}
+{"t":1794132170226,"kind":"live","event":{"type":"timeline","item":{"type":"tool_call","callId":"toolu_015R5SKEfkGK7REqeUUDJSUq","name":"Bash","detail":{"type":"unknown","input":{},"output":null},"status":"running","error":null}}}
+{"t":1794132170424,"kind":"live","event":{"type":"timeline","item":{"type":"tool_call","callId":"toolu_015R5SKEfkGK7REqeUUDJSUq","name":"Bash","detail":{"type":"shell","command":"i=0; while [ $i -lt 30 ]; do sleep 3; i=$((i+1)); done # aa-c10b"},"status":"running","error":null}}}
+{"t":1794132170582,"kind":"refetch","entries":[{"timestamp":"2026-11-08T10:02:50.422Z","turnId":"foreground-turn-1","item":{"type":"tool_call","callId":"toolu_015R5SKEfkGK7REqeUUDJSUq","name":"Bash","detail":{"type":"shell","command":"i=0; while [ $i -lt 30 ]; do sleep 3; i=$((i+1)); done # aa-c10b"},"status":"running","error":null}}]}
+{"t":1794132170695,"kind":"live","event":{"type":"timeline","item":{"type":"tool_call","callId":"toolu_015R5SKEfkGK7REqeUUDJSUq","name":"Bash","detail":{"type":"shell","command":"i=0; while [ $i -lt 30 ]; do sleep 3; i=$((i+1)); done # aa-c10b"},"status":"running","error":null}}}
+{"t":1794132171082,"kind":"refetch","entries":[{"timestamp":"2026-11-08T10:02:50.694Z","turnId":"foreground-turn-1","item":{"type":"tool_call","callId":"toolu_015R5SKEfkGK7REqeUUDJSUq","name":"Bash","detail":{"type":"shell","command":"i=0; while [ $i -lt 30 ]; do sleep 3; i=$((i+1)); done # aa-c10b"},"status":"running","error":null}}]}
+{"t":1794132183242,"kind":"live","event":{"type":"timeline","item":{"type":"tool_call","callId":"toolu_015R5SKEfkGK7REqeUUDJSUq","name":"Bash","detail":{"type":"shell","command":"i=0; while [ $i -lt 30 ]; do sleep 3; i=$((i+1)); done # aa-c10b"},"status":"canceled","error":null}}}
+{"t":1794132183252,"kind":"live","event":{"type":"turn_canceled"}}
+{"t":1794132183986,"kind":"error","error":"DaemonConnectionError: Transport closed (code 1005)"}
+{"t":1794132184108,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132184609,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132185110,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132185611,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132186111,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132186612,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132187114,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132187614,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132188116,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132188617,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132189117,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132189618,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132190119,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132190620,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132191121,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132191622,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132192123,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132192624,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132193125,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132193626,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132194126,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132194627,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132195129,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132195631,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132196131,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132196633,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132197135,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132197635,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132198137,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132198638,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132199139,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132199640,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132200141,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132200642,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132201143,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132201644,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132202145,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132202646,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132203147,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132203649,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132204150,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132204651,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132205150,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132205652,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132206152,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132206653,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132207154,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132207655,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132208155,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132208658,"kind":"error","error":"DaemonConnectionError: Transport not connected"}
+{"t":1794132209102,"kind":"end"}

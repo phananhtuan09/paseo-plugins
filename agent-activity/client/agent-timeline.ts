@@ -3,6 +3,7 @@ import { usePaseo } from "@getpaseo/plugin/client";
 import { useEffect, useSyncExternalStore } from "react";
 import { buildRows, type RawEntry, type AgentTimelineState } from "./timeline-rows.ts";
 export { stepKey, followState, type FollowState } from "./timeline-rows.ts";
+import { type AgentSnapshot, type PermissionEvent, PermissionTracker } from "./permissions.ts";
 import { type SegmentInfo, segmentRows } from "./segments.ts";
 
 type Paseo = PluginClientContext["paseo"];
@@ -20,6 +21,7 @@ class AgentTimelineStore {
   private disposed = false;
   private fetchSeq = 0;
   private entries: readonly RawEntry[] = [];
+  private readonly permissions = new PermissionTracker();
 
   constructor(private readonly agentId: string) {}
 
@@ -68,7 +70,9 @@ class AgentTimelineStore {
         .refetch({ direction: "tail", limit: TAIL_LIMIT })
         .then((payload) => {
           // A slower, older response must not overwrite a newer one.
-          if (!this.disposed && seq === this.fetchSeq) this.apply(payload.entries as unknown as RawEntry[]);
+          if (this.disposed || seq !== this.fetchSeq) return;
+          this.permissions.readAgent((payload as { agent?: AgentSnapshot }).agent);
+          this.apply(payload.entries as unknown as RawEntry[]);
         })
         .catch(() => {
           // Without a timeline the headers are skipped and each step still renders on its own.
@@ -79,12 +83,19 @@ class AgentTimelineStore {
     };
     refetch();
     const subscription = timeline.subscribe((message) => {
-      const type = (message as { event?: { type?: string } }).event?.type;
+      const event = (message as { event?: PermissionEvent }).event;
+      const type = event?.type;
+      if (type === "permission_requested" || type === "permission_resolved") this.onPermission(event!);
       if (type === "turn_started") this.setRunning(true);
       else if (type?.startsWith("turn_")) this.setRunning(false);
-      if (type === "timeline" || type?.startsWith("turn_") || type === "subscription_restored" || type === "replacement") schedule();
+      if (type === "timeline" || type === "permission_requested" || type === "permission_resolved" || type?.startsWith("turn_") || type === "subscription_restored" || type === "replacement") schedule();
     });
     this.stop = subscription;
+  }
+
+  private onPermission(event: PermissionEvent): void {
+    this.permissions.onEvent(event, Date.now());
+    if (this.state.loaded) this.apply(this.entries);
   }
 
   private shutdown(): void {
@@ -97,7 +108,9 @@ class AgentTimelineStore {
 
   private apply(entries: readonly RawEntry[]): void {
     this.entries = entries;
-    const rows = buildRows(entries, this.state.running);
+    const { permissions } = this;
+    const rows = buildRows(entries, this.state.running, { waiting: permissions.waiting, approvedAt: permissions.approvedAt, agentClosed: permissions.agentClosed });
+    permissions.prune(new Set(rows.flatMap((row) => (row.step?.callId && row.step.status !== "running" ? [row.step.callId] : []))));
     this.state = { ...this.state, rows, loaded: true, segments: segmentRows(rows) };
     this.emit();
   }

@@ -18,6 +18,10 @@ const DONE_HEAD_LINES = 40;
 const DIFF_MAX_LINES = 60;
 const PREVIEW_LINES = 20;
 
+const DENIED_PREFIX = "Permission request denied";
+const TIMEOUT_BACKGROUND = /Command did not complete within its (\d+)s timeout and was moved to the background \(ID: ([\w-]+)\)/;
+const REQUESTED_BACKGROUND = /^Command running in background with ID: ([\w-]+)/;
+
 const NAME_ACTIVITY: Record<string, Activity> = {
   bash: "run",
   read: "read",
@@ -79,6 +83,10 @@ function buildToolStep(item: ToolCallItem, _phase: Phase): ClassifyResult {
       target = commandTarget(detail.command);
       command = clip(detail.command, FIELD_MAX);
       body = outputBody(detail.output, status);
+      if (status === "done") {
+        const background = backgroundOf(detail.output);
+        if (background) step.background = background;
+      }
       break;
     case "worktree_setup":
       target = detail.branchName ? `worktree ${detail.branchName}` : "worktree";
@@ -165,7 +173,10 @@ function buildToolStep(item: ToolCallItem, _phase: Phase): ClassifyResult {
   if (status === "failed") {
     const errorText = errorTextOf(item.error);
     if (errorText) step.errorText = errorText;
-    meta = detail.type === "shell" && typeof detail.exitCode === "number"
+    if (errorText?.startsWith(DENIED_PREFIX)) step.denied = true;
+    meta = step.denied
+      ? "denied"
+      : detail.type === "shell" && typeof detail.exitCode === "number"
       ? `exit ${detail.exitCode}`
       : exitMeta(errorText) ?? "failed";
   }
@@ -177,6 +188,15 @@ function buildToolStep(item: ToolCallItem, _phase: Phase): ClassifyResult {
   if (command && command !== step.target) step.command = command;
   if (body) step.body = body;
   return step;
+}
+
+/** Claude Code moves a command to the background at its timeout or on request, and says so only in the output text. */
+function backgroundOf(output: string | undefined): ActivityStep["background"] {
+  if (typeof output !== "string") return undefined;
+  const timeout = TIMEOUT_BACKGROUND.exec(output);
+  if (timeout) return { id: timeout[2], kind: "timeout", timeoutSec: Number(timeout[1]) };
+  const requested = REQUESTED_BACKGROUND.exec(output);
+  return requested ? { id: requested[1], kind: "requested" } : undefined;
 }
 
 function activityOf(item: ToolCallItem): Activity {

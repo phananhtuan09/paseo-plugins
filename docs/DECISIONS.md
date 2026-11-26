@@ -25,6 +25,22 @@ Source: Human request, YYYY-MM-DD: <one-line summary>
 
 ## Entries
 
+## Running step display in agent-activity
+
+Date: 2026-11-08 · Status: Active
+Source: Human request, 2026-11-08: Grill rounds on the running-step display of `agent-activity`, and the follow-up answers accepting the recommendations after the Claude Code spike. Human answers, 2026-11-26: keep `killed` as shown, accept the reload limit on the approval clock.
+
+- Decision: At Brief and Steps, every running step shows its elapsed time from its entry timestamp, each parallel step has its own clock, and Brief and Steps show the same signals.
+- Decision: A step waiting for a permission shows `Waiting for approval` instead of a clock, and its clock starts when it is approved. A denied step is a failed step showing `denied`.
+- Decision: A step moved to the background, by the Claude Code timeout or by `run_in_background`, shows `In background` with a running clock until its completion notification. It then becomes `Ran` with its total duration, or `exit N` in red on failure. If the agent is closed and no notification came, it shows `status unknown` and stops counting.
+- Decision: A step that never went to the background shows no duration once finished. Durations of an hour or more read like `1h 15m`.
+- Decision: The plugin does not simulate progress. It shows no `slow` mark, no silence timer, no line count and no last output line, because Claude Code gives no output while a shell command runs.
+- Decision: A stopped step keeps the `canceled` display, the composer follow pill is unchanged, and the gap between two steps shows nothing. Full, answers and errors keep their current rendering.
+- Decision: A background command that ends with a `killed` notification (for example after a daemon restart) shows `killed` in red with its total time, as a failed step.
+- Decision: After a page reload, a step approved earlier counts from its permission request, because the approval time is only known to a client that saw it live. This limit is accepted.
+- Why: Claude Code moves a command to the background at its timeout instead of killing it and sends no running output, so elapsed time, approval and background state are the only honest signals for deciding to let an agent continue or stop it.
+- Constraints: Applies to Claude Code on Paseo 0.15.x. Details, scenarios and their visuals are in `docs/policies/agent-activity/running-step.md` and `docs/mockups/agent-activity/running-step.html`; implementation work follows `docs/plans/active/agent-activity-running-step.md`. Changing a rule here needs a new human decision.
+
 ## Plugin directory layout
 
 Date: 2026-11-04 · Status: Active

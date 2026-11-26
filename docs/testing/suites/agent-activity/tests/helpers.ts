@@ -8,7 +8,10 @@ export async function openAgent(page: Page): Promise<void> {
   await page.goto("/");
   const openMenu = page.getByRole("button", { name: "Open menu" });
   const row = page.getByText(workspaceName, { exact: true }).last();
-  await expect(openMenu.or(row)).toBeVisible({ timeout: 20_000 });
+  const composer = page.getByPlaceholder(/^Message/);
+  await expect(openMenu.or(row).or(composer).first()).toBeVisible({ timeout: 20_000 });
+  // A reload can land straight on the agent that was open.
+  if (await composer.isVisible()) return;
   if (await openMenu.isVisible()) await openMenu.click();
   await row.click({ timeout: 20_000 });
   await expect(page.getByPlaceholder(/^Message/)).toBeVisible({ timeout: 20_000 });

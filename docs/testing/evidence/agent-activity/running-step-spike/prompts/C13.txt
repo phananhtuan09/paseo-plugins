@@ -1,0 +1,1 @@
+In ONE message issue two Bash tool calls in parallel, with no timeout parameter: call 1 command 'sleep 10; echo A', call 2 command 'sleep 20; echo B'. Run nothing else. Then reply OK.

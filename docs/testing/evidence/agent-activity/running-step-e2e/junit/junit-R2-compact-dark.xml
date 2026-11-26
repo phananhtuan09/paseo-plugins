@@ -1,0 +1,6 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="38.945745">
+<testsuite name="activity.spec.ts" timestamp="2026-11-08T14:33:50.937Z" hostname="compact" tests="1" failures="0" skipped="0" time="38.589" errors="0">
+<testcase name="@R2 live: a command moved to the background shows In background with a clock, then its total time" classname="activity.spec.ts" time="38.589">
+</testcase>
+</testsuite>
+</testsuites>

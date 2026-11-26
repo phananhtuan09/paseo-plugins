@@ -1,0 +1,2 @@
+Use the Bash tool exactly once with this exact command, no timeout parameter, no other tools. After it finishes (or if it is denied) reply OK. Command:
+touch /tmp/aa-spike/work/C8a/made.txt && sleep 5

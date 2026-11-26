@@ -1,0 +1,2 @@
+Use the Bash tool with this exact command and nothing else. Do not set the timeout parameter. Do not run any other command or tool. Command:
+i=0; while [ $i -lt 30 ]; do sleep 3; i=$((i+1)); done # aa-c10b

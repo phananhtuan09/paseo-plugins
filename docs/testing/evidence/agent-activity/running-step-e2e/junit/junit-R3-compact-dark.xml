@@ -1,0 +1,6 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="22.468133">
+<testsuite name="activity.spec.ts" timestamp="2026-11-08T14:34:42.876Z" hostname="compact" tests="1" failures="0" skipped="0" time="22.093" errors="0">
+<testcase name="@R3 live: run_in_background shows In background right away, then its total time" classname="activity.spec.ts" time="22.093">
+</testcase>
+</testsuite>
+</testsuites>

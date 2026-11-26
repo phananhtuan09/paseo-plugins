@@ -1,0 +1,2 @@
+Use the Bash tool with this exact command and nothing else. Do not set the timeout parameter. Do not run any other command or tool. After it finishes reply OK. Command:
+printf '\033[32mgreen\033[0m start\n'; for i in 1 2 3 4 5; do printf 'dl %d%%\r' $((i*20)); sleep 2; echo err$i >&2; sleep 1; done; echo; echo done

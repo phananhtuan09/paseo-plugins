@@ -4,7 +4,7 @@ updates:
     directories:
       - /usage-pill
       - /agent-activity
-      - /agent-activity/e2e
+      - /docs/testing/suites/agent-activity
     schedule:
       interval: weekly
     open-pull-requests-limit: 5

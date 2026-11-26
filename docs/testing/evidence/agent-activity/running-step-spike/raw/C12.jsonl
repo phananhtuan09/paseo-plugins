@@ -1,0 +1,2 @@
+{"t":1794131882129,"kind":"refetch","entries":[{"timestamp":"2026-11-08T09:56:59.130Z","turnId":"foreground-turn-1","item":{"type":"tool_call","callId":"toolu_01T9XSiTbbaE8zYwaJFgResX","name":"Bash","detail":{"type":"shell","command":"i=0; while [ $i -lt 40 ]; do sleep 5; i=$((i+1)); done; echo finished"},"status":"running","error":null}}]}
+{"t":1794131888132,"kind":"end"}

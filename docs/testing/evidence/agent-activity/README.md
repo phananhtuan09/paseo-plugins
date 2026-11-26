@@ -8,7 +8,7 @@ It is a record of one run, not product authority; the intended behavior is in `d
 - `validate/expectations.json`: the expectations K1 to K10 taken from the plan's verification section.
 - `validate/risk.json`: the risk classification of the PR at the tested head (`9916499`).
 - `screenshots/{dark,light}/`: Brief, Steps, Full, one step opened, and plugin disabled, at desktop 1440 and compact 390.
-- The Playwright tests that produced these are in `agent-activity/e2e/`.
+- The Playwright tests that produced these are in `docs/testing/suites/agent-activity/`.
 
 ## Result
 

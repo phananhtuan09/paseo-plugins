@@ -5,10 +5,12 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import type { ActivityStep, StepStatus } from "../shared/activity.ts";
 import { ACTIVITY_META, activityLabel, type Phase } from "./activity-meta.ts";
 import { stepKey, useTimelineRow } from "./agent-timeline.ts";
+import { useClock } from "./clock.ts";
 import { useDetailLevel } from "./detail-level.ts";
 import { StepBodies } from "./step-bodies.tsx";
 import { formatDuration } from "./format.ts";
 import { paletteFor } from "./palette.ts";
+import type { Live } from "./running.ts";
 import type { SegmentInfo } from "./segments.ts";
 
 type Props = PluginTimelineItemProps<ActivityStep>;
@@ -35,7 +37,7 @@ export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
   // Changing the level drops every per-step tap so the whole timeline shows one level.
   useEffect(() => setManual(null), [level]);
   const bodyOpen = manual ?? level === "full";
-  const elapsed = useElapsed(step.status === "running", timestamp);
+  const live = row?.live;
 
   const { colors } = theme;
   const meta = ACTIVITY_META[step.activity];
@@ -43,6 +45,11 @@ export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
   const failed = step.status === "failed";
   const running = step.status === "running";
   const canceled = step.status === "canceled";
+  const waiting = live?.kind === "wait";
+  const background = live?.kind === "bg";
+  const unknown = live?.kind === "unknown";
+  // Background and unknown steps get a dashed border; only a step waiting for approval is amber.
+  const dashed = background || unknown;
   const hasBody = Boolean(step.details || step.body || step.errorText);
   const proseTarget = step.activity === "think" || step.activity === "delegate" || step.activity === "plan";
 
@@ -67,7 +74,16 @@ export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
         paddingHorizontal: 10,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: failed ? colors.statusDanger : running ? colors.accent : colors.border,
+        borderColor: failed
+          ? colors.statusDanger
+          : waiting
+            ? colors.statusWarning
+            : running
+              ? colors.accent
+              : unknown
+                ? colors.foregroundMuted
+                : colors.border,
+        borderStyle: dashed ? ("dashed" as const) : ("solid" as const),
         backgroundColor: running ? colors.surface1 : "transparent",
       },
       row: {
@@ -91,17 +107,35 @@ export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
         borderLeftColor: colors.border,
       },
     }),
-    [colors, layout.compact, failed, running, canceled, proseTarget],
+    [colors, layout.compact, failed, running, canceled, proseTarget, waiting, dashed, unknown],
   );
 
-  const metaText = [step.meta, running && elapsed ? elapsed : undefined].filter(Boolean).join(" · ");
+  const metaText = [step.meta, live?.kind === "bgdone" && live.totalMs !== undefined ? formatDuration(live.totalMs) : undefined]
+    .filter(Boolean)
+    .join(" · ");
   const statusColor = failed ? colors.statusDanger : colors.statusSuccess;
-  const status = running ? (
+  const liveText = live ? <LiveText live={live} style={styles.meta} warning={colors.statusWarning} /> : null;
+  const status = waiting ? (
+    <Icon name="ShieldAlert" size={14} color={colors.statusWarning} />
+  ) : background ? (
+    <Icon name="Layers" size={14} color={colors.accent} />
+  ) : unknown ? (
+    <Icon name="CircleDashed" size={14} color={colors.foregroundMuted} />
+  ) : running ? (
     <ActivityIndicator size="small" color={colors.accent} />
   ) : (
     <Icon name={STATUS_ICON[step.status]} size={14} color={statusColor} />
   );
-  const accessibilityLabel = `${label} ${step.target}, ${step.status === "done" ? "done" : step.status}, ${
+  const stateWord = waiting
+    ? "waiting for approval"
+    : background
+      ? "in background"
+      : unknown
+        ? "status unknown"
+        : step.denied
+          ? "denied"
+          : step.status;
+  const accessibilityLabel = `${label} ${step.target}, ${stateWord}, ${
     bodyOpen ? "expanded" : "collapsed"
   }`;
   const toggle = hasBody ? () => setManual(!bodyOpen) : undefined;
@@ -122,6 +156,7 @@ export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
           {step.target}
         </Text>
         {metaText ? <Text style={styles.meta}>{metaText}</Text> : null}
+        {liveText}
         {status}
       </Pressable>
     ) : (
@@ -142,6 +177,7 @@ export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
             {step.target}
           </Text>
           {metaText ? <Text style={styles.meta}>{metaText}</Text> : null}
+          {liveText}
         </View>
         {status}
       </Pressable>
@@ -164,7 +200,7 @@ export function StepView({ item, theme, layout, timestamp, agentId }: Props) {
 
 function Headers({ info, theme }: { info: SegmentInfo; theme: Props["theme"] }) {
   const { colors } = theme;
-  const now = useNow(Boolean(info.run?.running));
+  const now = useClock(Boolean(info.run?.running));
   return (
     <View>
       {info.run ? (
@@ -201,18 +237,16 @@ function Headers({ info, theme }: { info: SegmentInfo; theme: Props["theme"] }) 
   );
 }
 
-function useNow(active: boolean): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!active) return;
-    setNow(Date.now());
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [active]);
-  return now;
-}
-
-function useElapsed(running: boolean, timestamp: Date): string | undefined {
-  const now = useNow(running);
-  return running ? formatDuration(now - timestamp.getTime()) : undefined;
+/** The only part that re-renders every second: the clock text of one running step. */
+function LiveText({ live, style, warning }: { live: Live; style: object; warning: string }) {
+  const startMs = live.kind === "fg" || live.kind === "bg" ? live.startMs : undefined;
+  const now = useClock(startMs !== undefined);
+  const elapsed = startMs !== undefined ? formatDuration(now - startMs) : undefined;
+  // The state text never wraps or shrinks; the command target gives way instead.
+  const fixed = [style, { flexShrink: 0 }];
+  if (live.kind === "wait") return <Text numberOfLines={1} style={[...fixed, { color: warning }]}>Waiting for approval</Text>;
+  if (live.kind === "unknown") return <Text numberOfLines={1} style={fixed}>status unknown</Text>;
+  if (live.kind === "bg") return <Text numberOfLines={1} style={fixed}>{elapsed ? `In background · ${elapsed}` : "In background"}</Text>;
+  if (live.kind === "fg") return <Text numberOfLines={1} style={fixed}>{elapsed}</Text>;
+  return null;
 }

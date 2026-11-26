@@ -1,0 +1,2 @@
+Use the Bash tool with this exact command and nothing else. Do not set the timeout parameter. Do not run any other command or tool. After it finishes reply OK. Command:
+i=0; while [ $i -lt 40 ]; do sleep 5; i=$((i+1)); done; echo finished

@@ -1,0 +1,6 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="17.71163">
+<testsuite name="activity.spec.ts" timestamp="2026-11-08T14:27:36.079Z" hostname="desktop" tests="1" failures="0" skipped="0" time="17.365" errors="0">
+<testcase name="@R1 live: a command waiting for approval shows Waiting for approval, then a clock after Allow" classname="activity.spec.ts" time="17.365">
+</testcase>
+</testsuite>
+</testsuites>
