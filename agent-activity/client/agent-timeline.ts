@@ -3,6 +3,7 @@ import { usePaseo } from "@getpaseo/plugin/client";
 import { useEffect, useSyncExternalStore } from "react";
 import { buildRows, type RawEntry, type AgentTimelineState } from "./timeline-rows.ts";
 export { stepKey, followState, type FollowState } from "./timeline-rows.ts";
+import { type AgentSnapshot, type PermissionEvent, PermissionTracker } from "./permissions.ts";
 import { type SegmentInfo, segmentRows } from "./segments.ts";
 
 type Paseo = PluginClientContext["paseo"];
@@ -10,21 +11,6 @@ type Paseo = PluginClientContext["paseo"];
 const REFETCH_DELAY_MS = 300;
 const TAIL_LIMIT = 200;
 const NO_SEGMENTS: ReadonlyMap<string, SegmentInfo> = new Map();
-
-interface PermissionRequestShape {
-  id: string;
-  metadata?: { toolUseId?: unknown };
-}
-interface PermissionEvent {
-  type: string;
-  request?: PermissionRequestShape;
-  requestId?: string;
-  resolution?: { behavior?: string };
-}
-interface AgentSnapshot {
-  status?: string;
-  pendingPermissions?: PermissionRequestShape[];
-}
 
 class AgentTimelineStore {
   state: AgentTimelineState = { segments: NO_SEGMENTS, rows: [], loaded: false, running: false };
@@ -35,11 +21,7 @@ class AgentTimelineStore {
   private disposed = false;
   private fetchSeq = 0;
   private entries: readonly RawEntry[] = [];
-  /** Permission request id to the tool call it asks about. */
-  private readonly requests = new Map<string, string>();
-  private waiting = new Set<string>();
-  private readonly approvedAt = new Map<string, number>();
-  private agentClosed = false;
+  private readonly permissions = new PermissionTracker();
 
   constructor(private readonly agentId: string) {}
 
@@ -89,7 +71,7 @@ class AgentTimelineStore {
         .then((payload) => {
           // A slower, older response must not overwrite a newer one.
           if (this.disposed || seq !== this.fetchSeq) return;
-          this.readAgent((payload as { agent?: AgentSnapshot }).agent);
+          this.permissions.readAgent((payload as { agent?: AgentSnapshot }).agent);
           this.apply(payload.entries as unknown as RawEntry[]);
         })
         .catch(() => {
@@ -112,36 +94,8 @@ class AgentTimelineStore {
   }
 
   private onPermission(event: PermissionEvent): void {
-    if (event.type === "permission_requested") {
-      const toolUseId = event.request?.metadata?.toolUseId;
-      if (event.request && typeof toolUseId === "string") {
-        this.requests.set(event.request.id, toolUseId);
-        this.waiting.add(toolUseId);
-      }
-    } else if (event.requestId) {
-      const toolUseId = this.requests.get(event.requestId);
-      if (toolUseId) {
-        this.requests.delete(event.requestId);
-        this.waiting.delete(toolUseId);
-        if (event.resolution?.behavior === "allow") this.approvedAt.set(toolUseId, Date.now());
-      }
-    }
+    this.permissions.onEvent(event, Date.now());
     if (this.state.loaded) this.apply(this.entries);
-  }
-
-  /** A refetch is the truth about unanswered permission requests and whether the agent is still there. */
-  private readAgent(agent: AgentSnapshot | undefined): void {
-    if (!agent) return;
-    this.agentClosed = agent.status === "closed";
-    if (!Array.isArray(agent.pendingPermissions)) return;
-    this.requests.clear();
-    this.waiting = new Set();
-    for (const request of agent.pendingPermissions) {
-      const toolUseId = request?.metadata?.toolUseId;
-      if (typeof toolUseId !== "string") continue;
-      this.requests.set(request.id, toolUseId);
-      this.waiting.add(toolUseId);
-    }
   }
 
   private shutdown(): void {
@@ -154,7 +108,9 @@ class AgentTimelineStore {
 
   private apply(entries: readonly RawEntry[]): void {
     this.entries = entries;
-    const rows = buildRows(entries, this.state.running, { waiting: this.waiting, approvedAt: this.approvedAt, agentClosed: this.agentClosed });
+    const { permissions } = this;
+    const rows = buildRows(entries, this.state.running, { waiting: permissions.waiting, approvedAt: permissions.approvedAt, agentClosed: permissions.agentClosed });
+    permissions.prune(new Set(rows.flatMap((row) => (row.step?.callId && row.step.status !== "running" ? [row.step.callId] : []))));
     this.state = { ...this.state, rows, loaded: true, segments: segmentRows(rows) };
     this.emit();
   }
